@@ -41,3 +41,4 @@ target_link_libraries(allreduce_test
     PRIVATE
         NCCL::nccl
         CUDA::cudart)
+target_include_directories(allreduce_test PRIVATE objects.cuh bounding_box.cuh)

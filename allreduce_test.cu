@@ -10,7 +10,7 @@
 #include <nccl.h>
 
 
-#include "bounding_box"
+#include "bounding_box.cuh"
 #include "objects.cuh"
 
 #define CUDA_CHECK(cmd)                                                        \
@@ -100,9 +100,18 @@ int main(int argc, char** argv) {
 
   NCCL_CHECK(ncclGroupStart());
   for (int i = 0; i < nDev; ++i) {
+
     CUDA_CHECK(cudaSetDevice(devs[i]));
-    NCCL_CHECK(ncclAllReduce([i], recvbuff[i], N, ncclFloat, ncclMax,
+
+    NCCL_CHECK(ncclAllReduce(planes->minx, plane->minx, 1, ncclFloat, ncclMin, 
                              comms[i], streams[i]));
+    NCCL_CHECK(ncclAllReduce(planes->miny, plane->miny, 1, ncclFloat, ncclMin,
+                             comms[i], streams[i]));
+    NCCL_CHECK(ncclAllReduce(planes->maxx, plane->maxx, 1, ncclFloat, ncclMax,
+                             comms[i], streams[i]));
+    NCCL_CHECK(ncclAllReduce(planes->maxy, plane-maxy, 1, ncclFloat, ncclMax,
+                             comms[i], streams[i]));
+      
   }
   NCCL_CHECK(ncclGroupEnd());
 
