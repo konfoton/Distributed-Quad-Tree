@@ -36,9 +36,9 @@ if(NOT NCCL_FOUND)
     message(STATUS "Found NCCL: ${NCCL_LIBRARY}")
 endif()
 
-add_executable(allreduce_test allreduce_test.cu)
-target_link_libraries(allreduce_test
+add_executable(main main.cu)
+target_link_libraries(main
     PRIVATE
         NCCL::nccl
         CUDA::cudart)
-target_include_directories(allreduce_test PRIVATE objects.cuh bounding_box.cuh)
+target_include_directories(main PRIVATE objects.cuh bounding_box.cuh)
