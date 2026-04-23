@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
 
 
 
+  std::vector<int> devs = {0, 1};
   int deviceCount = 0;
   CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
   if (deviceCount < nDev) {
@@ -51,9 +52,9 @@ int main(int argc, char** argv) {
   }
   
   // init dummy data
-  std::vector<vector<float>> host;
-  vector<float> first = {1, 2, 3, -5, 5, 9, 7, 4, 6, 7};
-  vector<float> second = {-1, 2, 10, 4, 5, 9, 7, 4, 6, 7};
+  std::vector<std::vector<float>> host;
+  std::vector<float> first = {1, 2, 3, -5, 5, 9, 7, 4, 6, 7};
+  std::vector<float> second = {-1, 2, 10, 4, 5, 9, 7, 4, 6, 7};
   host.push_back(first);
   host.push_back(second);
 
@@ -63,13 +64,12 @@ int main(int argc, char** argv) {
   std::vector<node*> points_on_gpu;
   std::vector<plane*> planes;
   for(int i = 0; i < nDev; i++){
-    cudaSetDevice(devs[i]);
-    points_on_gpu.push_back(creator.create_node(host[i].data, number_of_points));
+    CUDA_CHECK(cudaSetDevice(devs[i]));
+    points_on_gpu.push_back(creator.create_node(host[i].data(), number_of_points));
     planes.push_back(creator.create_plane(number_of_blocks));
   }
 
   // nccl init
-  std::vector<int> devs = {0, 1};
   std::vector<float*> points(nDev);
   std::vector<cudaStream_t> streams(nDev);
   for (int i = 0; i < nDev; ++i) {
@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
     CUDA_CHECK(cudaMalloc(&points[i], N * sizeof(float)));
     CUDA_CHECK(cudaStreamCreate(&streams[i]));
 
-    CUDA_CHECK(cudaMemcpy(points[i], host[i].data, N * sizeof(float),
+    CUDA_CHECK(cudaMemcpy(points[i], host[i].data(), N * sizeof(float),
                           cudaMemcpyHostToDevice));
   }
 
@@ -88,12 +88,12 @@ int main(int argc, char** argv) {
   // start of iterating 
   for(int i = 0; i < number_of_iterations; i++){
 
-  for(int i = 0; i < n; nDev; i++){
+  for(int i = 0; i < nDev; i++){
     cudaSetDevice(devs[i]);
     calculate_bounding_box<<<number_of_blocks, number_of_threads>>>(points_on_gpu[i], planes[i]);
   }
 
-  for(int i = 0; i < n; nDev; i++){
+  for(int i = 0; i < nDev; i++){
     cudaSetDevice(devs[i]);
     cudaDeviceSynchronize();
   }
@@ -103,13 +103,13 @@ int main(int argc, char** argv) {
 
     CUDA_CHECK(cudaSetDevice(devs[i]));
 
-    NCCL_CHECK(ncclAllReduce(planes->minx, plane->minx, 1, ncclFloat, ncclMin, 
+    NCCL_CHECK(ncclAllReduce(planes[i]->minx, planes[i]->minx, 1, ncclFloat, ncclMin, 
                              comms[i], streams[i]));
-    NCCL_CHECK(ncclAllReduce(planes->miny, plane->miny, 1, ncclFloat, ncclMin,
+    NCCL_CHECK(ncclAllReduce(planes[i]->miny, planes[i]->miny, 1, ncclFloat, ncclMin,
                              comms[i], streams[i]));
-    NCCL_CHECK(ncclAllReduce(planes->maxx, plane->maxx, 1, ncclFloat, ncclMax,
+    NCCL_CHECK(ncclAllReduce(planes[i]->maxx, planes[i]->maxx, 1, ncclFloat, ncclMax,
                              comms[i], streams[i]));
-    NCCL_CHECK(ncclAllReduce(planes->maxy, plane-maxy, 1, ncclFloat, ncclMax,
+    NCCL_CHECK(ncclAllReduce(planes[i]->maxy, planes[i]->maxy, 1, ncclFloat, ncclMax,
                              comms[i], streams[i]));
       
   }
@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
 
 
 
-
+  bool ok = true;
   for (int i = 0; i < nDev; ++i) {
     CUDA_CHECK(cudaSetDevice(devs[i]));
     CUDA_CHECK(cudaFree(points[i]));

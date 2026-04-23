@@ -28,7 +28,7 @@ is_body checks if it is cell or a body
 */
 
 typedef struct tree {
-    int* number_of_cells;
+    int number_of_cells;
     bool* is_body;
     int* cells;
 } tree;
@@ -51,16 +51,16 @@ class builder {
     public:
         tree* create_tree(int number_of_cells){
             bool* is_body; 
-            float* cells;
+            int* cells;
 
             cudaMalloc(&is_body, sizeof(bool) * number_of_cells);
-            cudaMalloc(&cells, sizeof(float) * number_of_cells);
+            cudaMalloc(&cells, sizeof(int) * number_of_cells);
 
             tree* object;
             tree temp;
 
-            temp.is_body = is_body
-            temp.cells = cells
+            temp.is_body = is_body;
+            temp.cells = cells;
             temp.number_of_cells = number_of_cells;
 
             cudaMalloc(&object, sizeof(tree));
@@ -70,7 +70,7 @@ class builder {
         }
 
         node* create_node(float* h_data, int number_of_points){
-            int* d_data; 
+            float* d_data; 
 
             cudaMalloc(&d_data, sizeof(float) * number_of_points * 2);
             cudaMemcpy(d_data, h_data, sizeof(float) * number_of_points * 2, cudaMemcpyHostToDevice);
@@ -78,7 +78,7 @@ class builder {
             node* object; 
             node temp;
 
-            temp.points = d_data
+            temp.points = d_data;
             temp.number_of_points = number_of_points; 
 
             cudaMalloc(&object, sizeof(node));
@@ -87,11 +87,11 @@ class builder {
             return object;
         }
         plane* create_plane(int number_of_blocks){
-            float* minx, miny, maxx, maxy; 
-            cudaMalloc(&minx, number_of_blocks * sizeof(number_of_blocks));
-            cudaMalloc(&miny, number_of_blocks * sizeof(number_of_blocks));
-            cudaMalloc(&maxx, number_of_blocks * sizeof(number_of_blocks));
-            cudaMalloc(&maxy, number_of_blocks * sizeof(number_of_blocks));
+            float *minx, *miny, *maxx, *maxy; 
+            cudaMalloc(&minx, number_of_blocks * sizeof(float));
+            cudaMalloc(&miny, number_of_blocks * sizeof(float));
+            cudaMalloc(&maxx, number_of_blocks * sizeof(float));
+            cudaMalloc(&maxy, number_of_blocks * sizeof(float));
 
             plane* object;
             plane temp;
@@ -100,7 +100,10 @@ class builder {
             temp.miny = miny;
             temp.maxx = maxx;
             temp.maxy = maxy;
+            temp.maxx = maxx;
+            temp.maxy = maxy;
             
+            cudaMalloc(&object, sizeof(object));
             cudaMemcpy(object, &temp, sizeof(temp), cudaMemcpyHostToDevice);
 
             return object;

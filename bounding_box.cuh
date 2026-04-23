@@ -2,19 +2,7 @@
 #include "objects.cuh"
 
 
-/*
-
-
-
-
-
-
-
-*/
-
-
-
-int max_threads = 256;
+constexpr int max_threads = 256;
 
 __global__ void calculate_bounding_box(node* node, plane* plane){
    __shared__ float minx[max_threads], miny[max_threads], maxx[max_threads], maxy[max_threads];
@@ -42,7 +30,7 @@ __global__ void calculate_bounding_box(node* node, plane* plane){
     maxy[i] = fmaxf(maxy[i], maxy[i+j]);
     }
    }
-   int number_of_blocks = gridDim.x
+   int number_of_blocks = gridDim.x;
    if(i == 0){
         plane->minx[blockIdx.x] = minx[0];
         plane->miny[blockIdx.x] = miny[0];
@@ -58,9 +46,6 @@ __global__ void calculate_bounding_box(node* node, plane* plane){
                 plane->maxy[0] = fmaxf(plane->maxy[0], plane->maxy[i]);
             }
         }
-        float val = fmaxf(plane->maxx[0] - plane->minx[0], plane->maxy[0] - plane->miny[0]);
-        float radius = 0.5 * val; 
-
    }
     
 }
