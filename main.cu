@@ -98,18 +98,26 @@ int main(int argc, char** argv) {
     cudaDeviceSynchronize();
   }
 
+  // NOTE: `planes[i]` is a device pointer (cudaMalloc). Do not dereference it on the host.
+  // Copy the struct back to host to get the device pointers for NCCL and printing.
+  std::vector<plane> planes_h(nDev);
+  for (int i = 0; i < nDev; ++i) {
+    CUDA_CHECK(cudaSetDevice(devs[i]));
+    CUDA_CHECK(cudaMemcpy(&planes_h[i], planes[i], sizeof(plane), cudaMemcpyDeviceToHost));
+  }
+
   NCCL_CHECK(ncclGroupStart());
   for (int i = 0; i < nDev; ++i) {
 
     CUDA_CHECK(cudaSetDevice(devs[i]));
 
-    NCCL_CHECK(ncclAllReduce(planes[i]->minx, planes[i]->minx, 1, ncclFloat, ncclMin, 
+    NCCL_CHECK(ncclAllReduce(planes_h[i].minx, planes_h[i].minx, 1, ncclFloat, ncclMin, 
                              comms[i], streams[i]));
-    NCCL_CHECK(ncclAllReduce(planes[i]->miny, planes[i]->miny, 1, ncclFloat, ncclMin,
+    NCCL_CHECK(ncclAllReduce(planes_h[i].miny, planes_h[i].miny, 1, ncclFloat, ncclMin,
                              comms[i], streams[i]));
-    NCCL_CHECK(ncclAllReduce(planes[i]->maxx, planes[i]->maxx, 1, ncclFloat, ncclMax,
+    NCCL_CHECK(ncclAllReduce(planes_h[i].maxx, planes_h[i].maxx, 1, ncclFloat, ncclMax,
                              comms[i], streams[i]));
-    NCCL_CHECK(ncclAllReduce(planes[i]->maxy, planes[i]->maxy, 1, ncclFloat, ncclMax,
+    NCCL_CHECK(ncclAllReduce(planes_h[i].maxy, planes_h[i].maxy, 1, ncclFloat, ncclMax,
                              comms[i], streams[i]));
       
   }
@@ -118,6 +126,15 @@ int main(int argc, char** argv) {
   for (int i = 0; i < nDev; ++i) {
     CUDA_CHECK(cudaSetDevice(devs[i]));
     CUDA_CHECK(cudaStreamSynchronize(streams[i]));
+  }
+  for (int i = 0; i < nDev; ++i) {
+    CUDA_CHECK(cudaSetDevice(devs[i]));
+    float h_minx = 0.0f, h_miny = 0.0f, h_maxx = 0.0f, h_maxy = 0.0f;
+    CUDA_CHECK(cudaMemcpy(&h_minx, planes_h[i].minx, sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&h_miny, planes_h[i].miny, sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&h_maxx, planes_h[i].maxx, sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&h_maxy, planes_h[i].maxy, sizeof(float), cudaMemcpyDeviceToHost));
+    std::printf("GPU %d bbox: min=(%f, %f) max=(%f, %f)\n", devs[i], h_minx, h_miny, h_maxx, h_maxy);
   }
 
 }
