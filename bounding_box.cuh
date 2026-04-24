@@ -74,7 +74,8 @@ we build tree itera
 
 
 */
-__global__ void build_tree(float* points, int number_of_points, tree* tree, root* root){
+__global__ void build_tree(float* points, int number_of_points, tree* tree, root* root)
+{
 
     int i = threadIdx.x; + blockIdx.x * blockDim.x;
 
@@ -82,21 +83,24 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
 
     float x, y, dx, dy, r;
 
-    int step;
-    int child;
+    int step, child, depth;
 
 
     x = root.x;
     y = root.y;
     r = root.radius;
     step = 0;
+    depth = 0;
 
-    int child = tree->number_of_cells - 1;
+    int n = tree->number_of_cells - 1;
+    child = n;
 
-    while(i < number_of_points){
+    while(i < number_of_points)
+    {
        
         while(child > number_of_points){
 
+            n = child;
             r *= 0.5f;
 
             dx = -r;
@@ -119,61 +123,93 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
 
             x += dx;
             y += dy;
-            child = tree->cells[child * 4 + step];
+            child = tree->cells[n * 4 + step];
             step = 0;
         }
-        if (child != -2) { 
-            locked = n*8+j;
-      if (ch == -1) {
-        if (-1 == atomicCAS((int*)&childd[locked], -1, i)) { 
-          i += inc;  
-          skip = 1;
-        }
-      } else {  // there already is a body at this position
-        if (ch == atomicCAS((int*)&childd[locked], ch, -2)) {  // try to lock
-          patch = -1;
-          const float4 chp = posMassd[ch];
-          // create new cell(s) and insert the old and new bodies
-          do {
-            depth++;
-            if (depth > MAXDEPTH) {printf("ERROR: maximum depth exceeded (bodies are too close together)\n"); asm("trap;");}
 
-            cell = atomicSub((int*)&bottomd, 1) - 1;
-            if (cell <= nbodiesd) {printf("ERROR: out of cell memory\n"); asm("trap;");}
 
-            if (patch != -1) {
-              childd[n*8+j] = cell;
+
+
+        if (child != -2) 
+        { 
+            locked = n * 4 + step;
+            if (child == -1) 
+            {
+                if (-1 == atomicCAS(tree->cells[locked], -1, i))
+                { 
+                i += inc;  
+                }
+            } else 
+            {  
+                if (child == atomicCAS(tree->cells[locked], child, -2)) 
+                {
+                    int patch = -1
+                    int second_point = child;
+                    old_cell = -1;
+            
+                do {
+                    depth++;
+                    
+                    // we are out of depth
+                    if (depth > MAXDEPTH) {printf("ERROR: maximum depth exceeded (bodies are too close together)\n"); asm("trap;");}
+
+
+
+                    if(patch != -1){
+                        
+                    }
+                    // getting another free cell from a pool
+                    cell = atomicSub(&tree->number_of_free_cells, 1) - 1;
+
+                    if(patch == -1){
+                        path = cell;
+                    } else {
+                        tree->cells[old_cell + step] = cell;
+                    }
+
+                    // we are of of pool
+                    if (cell <= number_of_points) {printf("ERROR: out of cell memory\n"); asm("trap;");}
+
+                    
+                    step = 0;
+                    if (points[second_point * 2] > x) step |= 1;
+                    if (points[second_point * 2 * 1] > y) step |= 2;
+                    tree->cells[cell*4+step] = second_point;
+
+
+                    r *= 0.5f;
+                    dx = dy = dz = -r;
+
+
+                    step = 0;
+                    if (points[i * 2] > x) {step |= 1; dx = r;}
+                    if (points[i * 2 + 1] > y) {step |= 2; dy = r;}
+
+
+                    x += dx;
+                    y += dy;
+
+                    n = cell*4+step; 
+                    child = tree->cells[n];
+
+                    old_cell = cell;
+
+                    // repeat until the two bodies are different children
+                } while (child >= 0);
+
+                tree->cells[n] = i;
+                tree->cells[locked] = patch;
+                i += inc;
+
+                }
             }
-            patch = max(patch, cell);
-
-            j = 0;
-            if (x < chp.x) j = 1;
-            if (y < chp.y) j |= 2;
-            if (z < chp.z) j |= 4;
-            childd[cell*8+j] = ch;
-
-            n = cell;
-            r *= 0.5f;
-            dx = dy = dz = -r;
-            j = 0;
-            if (x < p.x) {j = 1; dx = r;}
-            if (y < p.y) {j |= 2; dy = r;}
-            if (z < p.z) {j |= 4; dz = r;}
-            x += dx;
-            y += dy;
-            z += dz;
-
-            ch = childd[n*8+j];
-            // repeat until the two bodies are different children
-          } while (ch >= 0);
-        
+        }   
+    }
 }
 
-    return;
+__global__ void summarize_kernel(){
+            return;
 }
-
-
-
 /*
 
 d: distance to a current center of mass
