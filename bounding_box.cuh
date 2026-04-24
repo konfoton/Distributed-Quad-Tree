@@ -56,10 +56,45 @@ __global__ void calculate_bounding_box(node* node, plane* plane){
     
 }
 
+__global__ void clear_kernel(tree* tree){
+    int i = threadIdx.x; + blockIdx.x * blockDim.x;
+    int inc = gridDim.x * blockDim.x;
+    for(int j = i; j < tree->number_of_cells; j += inc){
+        tree->is_body[i] = false;
+        tree->cells[i] = -1;
+    }
+}
+
+/*
+we build tree itera
 
 
 
-__global__ void build_tree(float* points, int number_of_points, tree* tree ){
+
+*/
+__global__ void build_tree(float* points, int number_of_points, tree* tree, root* root){
+
+    int i = threadIdx.x; + blockIdx.x * blockDim.x;
+
+    int inc = gridDim.x * blockDim.x;
+
+    int x, y, r, step;
+
+    x = root.x;
+    y = root.y;
+    r = root.radius;
+    step = 0;
+
+    int last_index = tree->number_of_cells - 1;
+
+    while(i < number_of_points){
+        if(points[i * 2] < x){
+            step |= 1;
+        }
+        if(points[i * 2 + 1] < y){
+        }
+}
+
     return;
 }
 

@@ -24,16 +24,23 @@ cells[i * 4 + 1] stores NW
 cells[i * 4 + 2] stores NE
 cells[i * 4 + 3] stores SW
 cells[i * 4 + 4] stores SE
-is_body checks if it is cell or a body
+
+cells[i] = -2 it is locked
+cells[i] = -1 it is free
+cells[i] != -1 and != -2 and is_body[i] = true it is body index 
+cells[i] != -1 and != -2 and is_body[i] = false it is cell index
 */
 
 typedef struct tree {
     unsigned int number_of_cells;
+    unsigned int* number_of_free_cells;
     bool* is_body;
-    unsigned int* cells;
+    int* cells;
 } tree;
 
-
+typedef struct root {
+    float x, y, radius;
+} root;
 
 
 /*
