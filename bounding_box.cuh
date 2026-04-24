@@ -59,7 +59,7 @@ __global__ void calculate_bounding_box(node* node, plane* plane){
 }
 
 __global__ void clear_kernel(tree* tree){
-    int i = threadIdx.x; + blockIdx.x * blockDim.x;
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
     int inc = gridDim.x * blockDim.x;
     for(int j = i; j < tree->number_of_cells; j += inc){
         tree->is_body[i] = false;
@@ -77,7 +77,7 @@ we build tree itera
 __global__ void build_tree(float* points, int number_of_points, tree* tree, root* root)
 {
 
-    int i = threadIdx.x; + blockIdx.x * blockDim.x;
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
 
     int inc = gridDim.x * blockDim.x;
 
@@ -86,9 +86,9 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
     int step, child, depth;
 
 
-    x = root.x;
-    y = root.y;
-    r = root.radius;
+    x = root->x;
+    y = root->y;
+    r = root->radius;
     step = 0;
     depth = 0;
 
@@ -98,9 +98,13 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
     while(i < number_of_points)
     {
        
+        // starting traversing from root
+        // TODO after being blocked we can skip and start from
+        // where we ended
         while(child > number_of_points){
 
             n = child;
+            step = 0;
             r *= 0.5f;
 
             dx = -r;
@@ -124,7 +128,6 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
             x += dx;
             y += dy;
             child = tree->cells[n * 4 + step];
-            step = 0;
         }
 
 
@@ -132,20 +135,20 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
 
         if (child != -2) 
         { 
-            locked = n * 4 + step;
+            int locked = n * 4 + step;
             if (child == -1) 
             {
-                if (-1 == atomicCAS(tree->cells[locked], -1, i))
+                if (-1 == atomicCAS(&tree->cells[locked], -1, i))
                 { 
                 i += inc;  
                 }
             } else 
             {  
-                if (child == atomicCAS(tree->cells[locked], child, -2)) 
+                if (child == atomicCAS(&tree->cells[locked], child, -2)) 
                 {
-                    int patch = -1
+                    int patch = -1;
                     int second_point = child;
-                    old_cell = -1;
+                    int old_cell = -1;
             
                 do {
                     depth++;
@@ -155,14 +158,11 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
 
 
 
-                    if(patch != -1){
-                        
-                    }
                     // getting another free cell from a pool
-                    cell = atomicSub(&tree->number_of_free_cells, 1) - 1;
+                    int cell = atomicSub(tree->number_of_free_cells, 1) - 1;
 
                     if(patch == -1){
-                        path = cell;
+                        patch = cell;
                     } else {
                         tree->cells[old_cell + step] = cell;
                     }
@@ -178,7 +178,7 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
 
 
                     r *= 0.5f;
-                    dx = dy = dz = -r;
+                    dx = dy = -r;
 
 
                     step = 0;
@@ -203,13 +203,25 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
 
                 }
             }
-        }   
+        } 
+        // it is performence boost because if thread is 
+        // locked it may 
+        // revolve around and here it just
+        // blocked until it is resolved 
+        __syncthreads();
     }
 }
 
 __global__ void summarize_kernel(){
             return;
 }
+
+
+
+
+
+
+
 /*
 
 d: distance to a current center of mass

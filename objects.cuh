@@ -64,16 +64,13 @@ typedef struct center_of_mass {
 class builder {
     public:
         tree* create_tree(unsigned int number_of_cells){
-            bool* is_body; 
-            unsigned int* cells;
+            int* cells;
 
-            cudaMalloc(&is_body, sizeof(bool) * number_of_cells);
             cudaMalloc(&cells, sizeof(unsigned int) * number_of_cells);
 
             tree* object;
             tree temp;
 
-            temp.is_body = is_body;
             temp.cells = cells;
             temp.number_of_cells = number_of_cells;
 
