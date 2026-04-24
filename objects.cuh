@@ -20,15 +20,22 @@ typedef struct plane {
 
 
 /*
-cells[i * 4 + 1] stores NW
-cells[i * 4 + 2] stores NE
-cells[i * 4 + 3] stores SW
-cells[i * 4 + 4] stores SE
+
+3 - 11 - SE
+2 - 10 - SW 
+0 - 00 - NW
+1 - 01 - NE
+
+cells[i * 4 + 0] 
+cells[i * 4 + 1] 
+cells[i * 4 + 2] 
+cells[i * 4 + 3] 
 
 cells[i] = -2 it is locked
 cells[i] = -1 it is free
 cells[i] != -1 and != -2 and is_body[i] = true it is body index 
 cells[i] != -1 and != -2 and is_body[i] = false it is cell index
+
 */
 
 typedef struct tree {

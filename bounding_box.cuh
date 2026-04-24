@@ -78,21 +78,49 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
 
     int inc = gridDim.x * blockDim.x;
 
-    int x, y, r, step;
+    float x, y, dx, dy, r;
+    int step;
+
+    int child;
+
 
     x = root.x;
     y = root.y;
     r = root.radius;
     step = 0;
 
-    int last_index = tree->number_of_cells - 1;
+    int child = tree->number_of_cells - 1;
 
     while(i < number_of_points){
-        if(points[i * 2] < x){
-            step |= 1;
+       
+        while(!tree->is_body[child]){
+
+            r *= 0.5f;
+
+            dx = -r;
+            dy = -r;
+
+            /*
+            3 - 11 - SE
+            2 - 10 - SW 
+            0 - 00 - NW
+            1 - 01 - NE
+            */
+            if(points[i * 2] > x){
+                step |= 1;
+                dx = r;
+            }
+            if(points[i * 2 + 1] > y){
+                step |= 2;
+                dy = r;
+            }
+
+            x += dx;
+            y += dy;
+            child = tree->cells[child * 4 + step];
+            step = 0;
         }
-        if(points[i * 2 + 1] < y){
-        }
+        
 }
 
     return;
