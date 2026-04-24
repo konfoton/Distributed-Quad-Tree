@@ -217,6 +217,19 @@ __global__ void summarize_kernel(){
 }
 
 
+/*
+We want to have exact reduced copy of first k levels 
+it is M = 4^0 + 4^1 + ... + 4^k cells
+to imlement it effecively i propose to for each node create buffer of size M with some 
+predetermined pattern adn then to allreduce and then each node update its tree
+to create this buffer i propose to spawn 4^k threads then each thread process k nodes
+each thread see its quaternary represtation id and then process all prefixes
+for instance for k = 5 and thread 03213 it process 0, 03, 032, 0321, 03213
+there is a bijection between prefix and walk on a tree 
+*/
+__global__ void prepare_to_send_levels(){
+    return;
+}
 
 
 
