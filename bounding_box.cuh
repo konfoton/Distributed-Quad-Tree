@@ -68,11 +68,12 @@ __global__ void clear_kernel(tree* tree){
 }
 
 /*
-we build tree itera
-
-
-
-
+we build tree iteratively
+possible entry of a tree->cells
+if -1 then empty 
+if -2 then locked
+if > number_of_points then cell
+if < numbber_of_points then point
 */
 __global__ void build_tree(float* points, int number_of_points, tree* tree, root* root)
 {
@@ -98,9 +99,11 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
     while(i < number_of_points)
     {
        
-        // starting traversing from root
-        // TODO after being blocked we can skip and start from
-        // where we ended
+        /*
+        starting traversing from root
+        TODO after being blocked we can skip and start from
+        where we ended
+        */
         while(child > number_of_points){
 
             n = child;
