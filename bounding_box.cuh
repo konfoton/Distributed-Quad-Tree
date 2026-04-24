@@ -3,6 +3,8 @@
 
 
 #define max_threads 256
+#define MAXDEPTH 32
+
 
 __global__ void calculate_bounding_box(node* node, plane* plane){
    __shared__ float minx[max_threads], miny[max_threads], maxx[max_threads], maxy[max_threads];
@@ -79,8 +81,8 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
     int inc = gridDim.x * blockDim.x;
 
     float x, y, dx, dy, r;
-    int step;
 
+    int step;
     int child;
 
 
@@ -93,7 +95,7 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
 
     while(i < number_of_points){
        
-        while(!tree->is_body[child]){
+        while(child > number_of_points){
 
             r *= 0.5f;
 
@@ -120,6 +122,50 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
             child = tree->cells[child * 4 + step];
             step = 0;
         }
+        if (child != -2) { 
+            locked = n*8+j;
+      if (ch == -1) {
+        if (-1 == atomicCAS((int*)&childd[locked], -1, i)) { 
+          i += inc;  
+          skip = 1;
+        }
+      } else {  // there already is a body at this position
+        if (ch == atomicCAS((int*)&childd[locked], ch, -2)) {  // try to lock
+          patch = -1;
+          const float4 chp = posMassd[ch];
+          // create new cell(s) and insert the old and new bodies
+          do {
+            depth++;
+            if (depth > MAXDEPTH) {printf("ERROR: maximum depth exceeded (bodies are too close together)\n"); asm("trap;");}
+
+            cell = atomicSub((int*)&bottomd, 1) - 1;
+            if (cell <= nbodiesd) {printf("ERROR: out of cell memory\n"); asm("trap;");}
+
+            if (patch != -1) {
+              childd[n*8+j] = cell;
+            }
+            patch = max(patch, cell);
+
+            j = 0;
+            if (x < chp.x) j = 1;
+            if (y < chp.y) j |= 2;
+            if (z < chp.z) j |= 4;
+            childd[cell*8+j] = ch;
+
+            n = cell;
+            r *= 0.5f;
+            dx = dy = dz = -r;
+            j = 0;
+            if (x < p.x) {j = 1; dx = r;}
+            if (y < p.y) {j |= 2; dy = r;}
+            if (z < p.z) {j |= 4; dz = r;}
+            x += dx;
+            y += dy;
+            z += dz;
+
+            ch = childd[n*8+j];
+            // repeat until the two bodies are different children
+          } while (ch >= 0);
         
 }
 
