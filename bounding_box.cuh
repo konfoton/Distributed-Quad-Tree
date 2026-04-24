@@ -227,7 +227,7 @@ each thread see its quaternary represtation id and then process all prefixes
 for instance for k = 5 and thread 03213 it process 0, 03, 032, 0321, 03213
 there is a bijection between prefix and walk on a tree 
 the last problem is how to access appopriate idex all we have to do is
-for sequecne of length m index is 4^0 + 4^1 + ... + 4^(m-1) + m 
+for sequecne of length m and value j index is 4^0 + 4^1 + ... + 4^(m-1) + j
 */
 __global__ void prepare_to_send_levels(){
     return;
