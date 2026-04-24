@@ -42,3 +42,8 @@ target_link_libraries(main
         NCCL::nccl
         CUDA::cudart)
 target_include_directories(main PRIVATE objects.cuh bounding_box.cuh)
+
+# Single-GPU smoke test for build_tree (no NCCL).
+add_executable(test_build_tree test_build_tree.cu)
+target_link_libraries(test_build_tree PRIVATE CUDA::cudart)
+target_include_directories(test_build_tree PRIVATE ${CMAKE_SOURCE_DIR})
