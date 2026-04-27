@@ -236,7 +236,7 @@ __global__ void summarize_kernel(float* points, float* average, int* count_of_po
   float m, cm, px, py, pz;
   __shared__ int child[max_threads * 8];
 
-  bottom = bottomd;
+  bottom = tree->number_of_free_cells;
   inc = blockDim.x * gridDim.x;
   k = threadIdx.x + blockIdx.x * blockDim.x;
   if (k < bottom) k += inc;
