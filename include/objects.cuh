@@ -1,23 +1,17 @@
 #pragma once
 
-
-
-
-
 typedef struct node {
-    unsigned int number_of_points;
-    float* points;
+  unsigned int number_of_points;
+  float* points;
 } node;
 
 typedef struct plane {
-    unsigned int current_number_of_blocks = 0;
-    float* minx;
-    float* miny;
-    float* maxx;
-    float* maxy;
+  unsigned int current_number_of_blocks = 0;
+  float* minx;
+  float* miny;
+  float* maxx;
+  float* maxy;
 } plane;
-
-
 
 /*
 
@@ -45,84 +39,80 @@ slot sentinels:
 */
 
 typedef struct tree {
-    unsigned int number_of_cells;
-    unsigned int* number_of_free_cells;
-    bool* is_body;
-    int* cells;
+  unsigned int number_of_cells;
+  unsigned int* number_of_free_cells;
+  bool* is_body;
+  int* cells;
 } tree;
 
 typedef struct root {
-    float x, y, radius;
+  float x, y, radius;
 } root;
 
-
 /*
-each cell has info about its center of mass and 
+each cell has info about its center of mass and
 number of elements
 */
 typedef struct center_of_mass {
-    float* center;
-    unsigned int* number_of_elements; 
-} center_of_mass; 
-
-
+  float* center;
+  unsigned int* number_of_elements;
+} center_of_mass;
 
 class builder {
-    public:
-        tree* create_tree(unsigned int number_of_cells){
-            int* cells;
+ public:
+  tree* create_tree(unsigned int number_of_cells) {
+    int* cells;
 
-            cudaMalloc(&cells, sizeof(unsigned int) * number_of_cells);
+    cudaMalloc(&cells, sizeof(unsigned int) * number_of_cells);
 
-            tree* object;
-            tree temp;
+    tree* object;
+    tree temp;
 
-            temp.cells = cells;
-            temp.number_of_cells = number_of_cells;
+    temp.cells = cells;
+    temp.number_of_cells = number_of_cells;
 
-            cudaMalloc(&object, sizeof(tree));
-            cudaMemcpy(object, &temp, sizeof(temp), cudaMemcpyHostToDevice);
-            
-            return object;
-        }
+    cudaMalloc(&object, sizeof(tree));
+    cudaMemcpy(object, &temp, sizeof(temp), cudaMemcpyHostToDevice);
 
-        node* create_node(float* h_data, unsigned int number_of_points){
-            float* d_data; 
+    return object;
+  }
 
-            cudaMalloc(&d_data, sizeof(float) * number_of_points * 2);
-            cudaMemcpy(d_data, h_data, sizeof(float) * number_of_points * 2, cudaMemcpyHostToDevice);
+  node* create_node(float* h_data, unsigned int number_of_points) {
+    float* d_data;
 
-            node* object; 
-            node temp;
+    cudaMalloc(&d_data, sizeof(float) * number_of_points * 2);
+    cudaMemcpy(d_data, h_data, sizeof(float) * number_of_points * 2,
+               cudaMemcpyHostToDevice);
 
-            temp.points = d_data;
-            temp.number_of_points = number_of_points; 
+    node* object;
+    node temp;
 
-            cudaMalloc(&object, sizeof(node));
-            cudaMemcpy(object, &temp, sizeof(temp), cudaMemcpyHostToDevice);
+    temp.points = d_data;
+    temp.number_of_points = number_of_points;
 
-            return object;
-        }
-        plane* create_plane(unsigned int number_of_blocks){
-            float *minx, *miny, *maxx, *maxy; 
-            cudaMalloc(&minx, number_of_blocks * sizeof(float));
-            cudaMalloc(&miny, number_of_blocks * sizeof(float));
-            cudaMalloc(&maxx, number_of_blocks * sizeof(float));
-            cudaMalloc(&maxy, number_of_blocks * sizeof(float));
+    cudaMalloc(&object, sizeof(node));
+    cudaMemcpy(object, &temp, sizeof(temp), cudaMemcpyHostToDevice);
 
-            plane* object;
-            plane temp;
+    return object;
+  }
+  plane* create_plane(unsigned int number_of_blocks) {
+    float *minx, *miny, *maxx, *maxy;
+    cudaMalloc(&minx, number_of_blocks * sizeof(float));
+    cudaMalloc(&miny, number_of_blocks * sizeof(float));
+    cudaMalloc(&maxx, number_of_blocks * sizeof(float));
+    cudaMalloc(&maxy, number_of_blocks * sizeof(float));
 
-            temp.minx = minx;
-            temp.miny = miny;
-            temp.maxx = maxx;
-            temp.maxy = maxy;
-            
-            cudaMalloc(&object, sizeof(plane));
-            cudaMemcpy(object, &temp, sizeof(temp), cudaMemcpyHostToDevice);
+    plane* object;
+    plane temp;
 
-            return object;
-        }
-        
-        
+    temp.minx = minx;
+    temp.miny = miny;
+    temp.maxx = maxx;
+    temp.maxy = maxy;
+
+    cudaMalloc(&object, sizeof(plane));
+    cudaMemcpy(object, &temp, sizeof(temp), cudaMemcpyHostToDevice);
+
+    return object;
+  }
 };
