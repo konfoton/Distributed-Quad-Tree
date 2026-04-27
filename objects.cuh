@@ -21,20 +21,26 @@ typedef struct plane {
 
 /*
 
-3 - 11 - SE
-2 - 10 - SW 
-0 - 00 - NW
-1 - 01 - NE
+quadrant indexing used by build_tree:
+  bit 0 (value 1) is set when point.x > center.x  (east)
+  bit 1 (value 2) is set when point.y > center.y  (north)
 
-cells[i * 4 + 0] 
-cells[i * 4 + 1] 
-cells[i * 4 + 2] 
-cells[i * 4 + 3] 
+  step 0 = 00 = SW   (west, south)
+  step 1 = 01 = SE   (east, south)
+  step 2 = 10 = NW   (west, north)
+  step 3 = 11 = NE   (east, north)
 
-cells[i] = -2 it is locked
-cells[i] = -1 it is free
-cells[i] != -1 and != -2 and is_body[i] = true it is body index 
-cells[i] != -1 and != -2 and is_body[i] = false it is cell index
+children of cell i live at cells[i*4 + 0 .. i*4 + 3]:
+  cells[i*4 + 0] -> SW
+  cells[i*4 + 1] -> SE
+  cells[i*4 + 2] -> NW
+  cells[i*4 + 3] -> NE
+
+slot sentinels:
+  cells[k] = -1          slot is free
+  cells[k] = -2          slot is locked (insertion in progress)
+  cells[k] >= 0 and is_body[k] = true   it is a body index
+  cells[k] >= 0 and is_body[k] = false  it is a cell index
 
 */
 
