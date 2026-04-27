@@ -103,6 +103,11 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree, root
         /* TODO optimization may be done becase each iteratino we traverse from the beggining*/
         n = tree->number_of_cells - 1;
         child = n;
+        x = root->x;
+        y = root->y;
+        r = root->radius;
+        step = 0;
+        depth = 0;
         /*
         starting traversing from root
         TODO after being blocked we can skip and start from
