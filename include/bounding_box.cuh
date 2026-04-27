@@ -217,7 +217,67 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree,
   }
 }
 
-__global__ void summarize_kernel() { return; }
+
+
+
+
+
+/*
+avergae up to number_of_points has to ahve be filled with single points
+count_of_poinst is intilzied with -1 
+bottom is the lowest allocated cell
+
+*/
+__global__ void summarize_kernel(float* average, int number_of_cells, int* count_of_points, tree* tree, int number_of_point){
+  int i, j, k, ch, inc, cnt, bottom;
+  float m, cm, px, py, pz;
+  __shared__ int child[max_threads * 8];
+
+  bottom = bottomd;
+  inc = blockDim.x * gridDim.x;
+  k = threadIdx.x + blockIdx.x * blockDim.x;  // align to warp size
+  if (k < bottom) k += inc;
+
+  while (k <= number_of_cells) {
+    if (count_of_points[k] < 0.0f) {
+      for (i = 0; i < 4; i++) {
+        ch = tree->cells[k*4+i];
+        child[i*max_threads + threadIdx.x] = ch;  // cache children
+        if ((ch >= number_of_point) && ((count_of_points[ch]) < 0)) {
+          break;
+        }
+      }
+      if (i == 8) {
+        // all children are ready
+        cm = 0.0f;
+        px = 0.0f;
+        py = 0.0f;
+        pz = 0.0f;
+        cnt = 0;
+        for (i = 0; i < 8; i++) {
+          ch = child[i*THREADS3+threadIdx.x];
+          if (ch >= 0) {
+            float chx = average[ch * 2];
+            float chy = average[ch * 2 + 1];
+            if (ch >= nbodiesd) {
+              cnt += count_of_points[ch];
+            } else {
+              cnt++;
+            }
+            // add child's contribution
+            px += chx * count_of_points[ch];
+            py += chy * count_of_points[ch];
+          }
+        }
+        average[k * 2] =  px
+        average[k * 2 + 1] = py
+        __threadfence();
+        count_of_points[k] = cnt;
+        k += inc; 
+      }
+    }
+  }
+}
 
 /*
 We want to have exact reduced copy of first k levels
