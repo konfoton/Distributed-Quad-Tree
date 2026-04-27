@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include "objects.cuh"
 
 #define max_threads 256
@@ -63,6 +64,9 @@ __global__ void clear_kernel(tree* tree) {
   for (int j = i; j < tree->number_of_cells; j += inc) {
     tree->is_body[i] = false;
     tree->cells[i] = -1;
+    tree->cells[i + 1] = -1;
+    tree->cells[i + 2] = -1;
+    tree->cells[i + 3] = -1;
   }
 }
 
@@ -217,7 +221,71 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree,
   }
 }
 
-__global__ void summarize_kernel() { return; }
+
+__global__ void clear_kernel_two(float* average, int* count_of_points, int number_of_cells) {
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  int inc = gridDim.x * blockDim.x;
+  for (int j = i; j < number_of_cells; j += inc) {
+    count_of_points[i] = -1; 
+  }
+}
+
+
+__global__ void summarize_kernel(float* points, float* average, int* count_of_points, tree* tree, int number_of_points, int number_of_cells){
+  int i, j, k, ch, inc, cnt, bottom;
+  float m, cm, px, py, pz;
+  __shared__ int child[max_threads * 8];
+
+  bottom = *(tree->number_of_free_cells);
+  inc = blockDim.x * gridDim.x;
+  k = threadIdx.x + blockIdx.x * blockDim.x;
+  if (k < bottom) k += inc;
+
+  while (k <= number_of_cells) {
+    if (count_of_points[k] < 0.0f) {
+      for (i = 0; i < 4; i++) {
+        ch = tree->cells[k*4+i];
+        child[i*max_threads + threadIdx.x] = ch;  // cache children
+        if ((ch >= number_of_points) && ((count_of_points[ch]) < 0)) {
+          break;
+        }
+      }
+      if (i == 4) {
+        // all children are ready
+        px = 0.0f;
+        py = 0.0f;
+        cnt = 0;
+        for (i = 0; i < 4; i++) {
+          ch = child[i*max_threads+threadIdx.x];
+          if (ch >= 0) {
+            if(ch >= number_of_points){
+              float chx = average[ch * 2];
+              float chy = average[ch * 2 + 1];
+            } else {
+              chx = points[ch * 2];
+              chy = points[ch * 2 + 1];
+            }
+            if (ch >= number_of_points) {
+              cnt += count_of_points[ch];
+            } else {
+              cnt++;
+            }
+            // add child's contribution
+            float coefficient = 1.0f / count_of_points[ch];
+            px += chx * coefficient;
+            py += chy * coefficient;
+          }
+        }
+        coefficient = 1.0f / cnt; 
+        average[k * 2] =  px * coefficient;
+        average[k * 2 + 1] = py * coefficient;
+        __threadfence();
+        count_of_points[k] = cnt;
+        k += inc; 
+      }
+    }
+  }
+}
 
 /*
 We want to have exact reduced copy of first k levels

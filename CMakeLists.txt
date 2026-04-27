@@ -47,3 +47,8 @@ target_include_directories(main PRIVATE include)
 add_executable(test_build_tree src/test_build_tree.cu)
 target_link_libraries(test_build_tree PRIVATE CUDA::cudart)
 target_include_directories(test_build_tree PRIVATE include)
+
+# Single-GPU smoke test for summarize_kernel (no NCCL).
+add_executable(test_summarize src/test_summarize.cu)
+target_link_libraries(test_summarize PRIVATE CUDA::cudart)
+target_include_directories(test_summarize PRIVATE include)
