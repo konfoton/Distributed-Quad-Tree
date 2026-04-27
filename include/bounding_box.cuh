@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include "objects.cuh"
 
 #define max_threads 256
@@ -63,6 +64,9 @@ __global__ void clear_kernel(tree* tree) {
   for (int j = i; j < tree->number_of_cells; j += inc) {
     tree->is_body[i] = false;
     tree->cells[i] = -1;
+    tree->cells[i + 1] = -1;
+    tree->cells[i + 2] = -1;
+    tree->cells[i + 3] = -1;
   }
 }
 
@@ -218,24 +222,23 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree,
 }
 
 
+__global__ void clear_kernel_two(float* average, int* count_of_points, int number_of_cells) {
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  int inc = gridDim.x * blockDim.x;
+  for (int j = i; j < number_of_cells; j += inc) {
+    count_of_points[i] = -1; 
+  }
+}
 
 
-
-
-/*
-avergae up to number_of_points has to ahve be filled with single points
-count_of_poinst is intilzied with -1 
-bottom is the lowest allocated cell
-
-*/
-__global__ void summarize_kernel(float* average, int number_of_cells, int* count_of_points, tree* tree, int number_of_point){
+__global__ void summarize_kernel(float* points, float* average, int* count_of_points, tree* tree, int number_of_points, int number_of_cells){
   int i, j, k, ch, inc, cnt, bottom;
   float m, cm, px, py, pz;
   __shared__ int child[max_threads * 8];
 
   bottom = bottomd;
   inc = blockDim.x * gridDim.x;
-  k = threadIdx.x + blockIdx.x * blockDim.x;  // align to warp size
+  k = threadIdx.x + blockIdx.x * blockDim.x;
   if (k < bottom) k += inc;
 
   while (k <= number_of_cells) {
@@ -243,34 +246,39 @@ __global__ void summarize_kernel(float* average, int number_of_cells, int* count
       for (i = 0; i < 4; i++) {
         ch = tree->cells[k*4+i];
         child[i*max_threads + threadIdx.x] = ch;  // cache children
-        if ((ch >= number_of_point) && ((count_of_points[ch]) < 0)) {
+        if ((ch >= number_of_points) && ((count_of_points[ch]) < 0)) {
           break;
         }
       }
-      if (i == 8) {
+      if (i == 4) {
         // all children are ready
-        cm = 0.0f;
         px = 0.0f;
         py = 0.0f;
-        pz = 0.0f;
         cnt = 0;
-        for (i = 0; i < 8; i++) {
-          ch = child[i*THREADS3+threadIdx.x];
+        for (i = 0; i < 4; i++) {
+          ch = child[i*max_threads+threadIdx.x];
           if (ch >= 0) {
-            float chx = average[ch * 2];
-            float chy = average[ch * 2 + 1];
-            if (ch >= nbodiesd) {
+            if(ch >= number_of_points){
+              float chx = average[ch * 2];
+              float chy = average[ch * 2 + 1];
+            } else {
+              chx = points[ch * 2];
+              chy = points[ch * 2 + 1];
+            }
+            if (ch >= number_of_points) {
               cnt += count_of_points[ch];
             } else {
               cnt++;
             }
             // add child's contribution
-            px += chx * count_of_points[ch];
-            py += chy * count_of_points[ch];
+            float coefficient = 1.0f / count_of_points[ch];
+            px += chx * coefficient;
+            py += chy * coefficient;
           }
         }
-        average[k * 2] =  px
-        average[k * 2 + 1] = py
+        coefficient = 1.0f / cnt; 
+        average[k * 2] =  px * coefficient;
+        average[k * 2 + 1] = py * coefficient;
         __threadfence();
         count_of_points[k] = cnt;
         k += inc; 
