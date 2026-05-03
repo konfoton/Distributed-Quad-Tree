@@ -309,7 +309,7 @@ __global__ void prepare_to_send_levels(tree* tree, float* average_of_points, int
     int inc = blockDim.x * gridDim.x;
     int i = threadIdx.x + blockDim.x * blockIdx.x;
     int start = 4;
-    int mask = 0x3
+    int mask = 0x3;
     int ch = n;
     int sum = 0;
     while(i < number_of_iter){
@@ -335,7 +335,7 @@ __global__ void apply_sumamary_across_nodes(tree* tree, float* average_of_points
     int inc = blockDim.x * gridDim.x;
     int i = threadIdx.x + blockDim.x * blockIdx.x;
     int start = 4;
-    int mask = 0x3
+    int mask = 0x3;
     int ch = n;
     int sum = 0;
     while(i < number_of_iter){
