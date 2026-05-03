@@ -59,7 +59,6 @@ struct DeviceTree {
   root*  d_root;
   unsigned int* d_free;
   int*   d_cells;
-  bool*  d_is_body;
   unsigned int max_cells;
   int    number_of_points;
 };
@@ -81,18 +80,12 @@ DeviceTree build_known_tree(const std::vector<float>& host_points,
 
   CUDA_CHECK(cudaMalloc(&dt.d_cells,
                         sizeof(int) * cells_array_len));
-  CUDA_CHECK(cudaMalloc(&dt.d_is_body,
-                        sizeof(bool) * cells_array_len));
   CUDA_CHECK(cudaMalloc(&dt.d_free, sizeof(unsigned int)));
 
   std::vector<int>  init_cells(cells_array_len, -1);
-  std::vector<char> init_is_body(cells_array_len, 0);
   unsigned int      init_free = dt.max_cells - 1u;
   CUDA_CHECK(cudaMemcpy(dt.d_cells, init_cells.data(),
                         sizeof(int) * cells_array_len,
-                        cudaMemcpyHostToDevice));
-  CUDA_CHECK(cudaMemcpy(dt.d_is_body, init_is_body.data(),
-                        sizeof(bool) * cells_array_len,
                         cudaMemcpyHostToDevice));
   CUDA_CHECK(cudaMemcpy(dt.d_free, &init_free, sizeof(unsigned int),
                         cudaMemcpyHostToDevice));
@@ -100,7 +93,6 @@ DeviceTree build_known_tree(const std::vector<float>& host_points,
   tree h_tree{};
   h_tree.number_of_cells      = dt.max_cells;
   h_tree.number_of_free_cells = dt.d_free;
-  h_tree.is_body              = dt.d_is_body;
   h_tree.cells                = dt.d_cells;
   CUDA_CHECK(cudaMalloc(&dt.d_tree, sizeof(tree)));
   CUDA_CHECK(cudaMemcpy(dt.d_tree, &h_tree, sizeof(tree),
@@ -121,7 +113,6 @@ DeviceTree build_known_tree(const std::vector<float>& host_points,
 void free_device_tree(DeviceTree& dt) {
   CUDA_CHECK(cudaFree(dt.d_points));
   CUDA_CHECK(cudaFree(dt.d_cells));
-  CUDA_CHECK(cudaFree(dt.d_is_body));
   CUDA_CHECK(cudaFree(dt.d_free));
   CUDA_CHECK(cudaFree(dt.d_tree));
   CUDA_CHECK(cudaFree(dt.d_root));

@@ -127,10 +127,8 @@ bool run_case(const char* label, const std::vector<float>& host_points,
                         cudaMemcpyHostToDevice));
 
   int* d_cells = nullptr;
-  bool* d_is_body = nullptr;
   unsigned int* d_free = nullptr;
   CUDA_CHECK(cudaMalloc(&d_cells, sizeof(int) * cells_array_len));
-  CUDA_CHECK(cudaMalloc(&d_is_body, sizeof(bool) * cells_array_len));
   CUDA_CHECK(cudaMalloc(&d_free, sizeof(unsigned int)));
 
   // Every slot empty (-1) and is_body cleared. The root lives at cell index
@@ -138,21 +136,16 @@ bool run_case(const char* label, const std::vector<float>& host_points,
   // `atomicSub(number_of_free_cells, 1) - 1`. Seeding the counter at
   // `max_cells - 1` makes the next allocation hand out `max_cells - 2`.
   std::vector<int> init_cells(cells_array_len, -1);
-  std::vector<char> init_is_body(cells_array_len, 0);
   unsigned int init_free = max_cells - 1u;
 
   CUDA_CHECK(cudaMemcpy(d_cells, init_cells.data(),
                         sizeof(int) * cells_array_len, cudaMemcpyHostToDevice));
-  CUDA_CHECK(cudaMemcpy(d_is_body, init_is_body.data(),
-                        sizeof(bool) * cells_array_len,
-                        cudaMemcpyHostToDevice));
   CUDA_CHECK(cudaMemcpy(d_free, &init_free, sizeof(unsigned int),
                         cudaMemcpyHostToDevice));
 
   tree h_tree{};
   h_tree.number_of_cells = max_cells;
   h_tree.number_of_free_cells = d_free;
-  h_tree.is_body = d_is_body;
   h_tree.cells = d_cells;
   tree* d_tree = nullptr;
   CUDA_CHECK(cudaMalloc(&d_tree, sizeof(tree)));
@@ -202,7 +195,6 @@ bool run_case(const char* label, const std::vector<float>& host_points,
 
   CUDA_CHECK(cudaFree(d_points));
   CUDA_CHECK(cudaFree(d_cells));
-  CUDA_CHECK(cudaFree(d_is_body));
   CUDA_CHECK(cudaFree(d_free));
   CUDA_CHECK(cudaFree(d_tree));
   CUDA_CHECK(cudaFree(d_root));

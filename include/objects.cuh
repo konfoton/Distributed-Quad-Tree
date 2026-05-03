@@ -33,15 +33,11 @@ children of cell i live at cells[i*4 + 0 .. i*4 + 3]:
 slot sentinels:
   cells[k] = -1          slot is free
   cells[k] = -2          slot is locked (insertion in progress)
-  cells[k] >= 0 and is_body[k] = true   it is a body index
-  cells[k] >= 0 and is_body[k] = false  it is a cell index
-
 */
 
 typedef struct tree {
   unsigned int number_of_cells;
   unsigned int* number_of_free_cells;
-  bool* is_body;
   int* cells;
 } tree;
 
