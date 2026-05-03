@@ -241,7 +241,7 @@ __global__ void summarize_kernel(float* points, float* average, int* count_of_po
   bottom = *(tree->number_of_free_cells);
   inc = blockDim.x * gridDim.x;
   k = threadIdx.x + blockIdx.x * blockDim.x;
-  if (k < bottom) k += inc;
+  while (k < bottom) k += inc;
 
   while (k <= number_of_cells) {
     if (count_of_points[k] < 0.0f) {
