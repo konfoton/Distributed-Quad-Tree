@@ -352,6 +352,7 @@ int main() {
                           cudaMemcpyHostToDevice));
   }
 
+
   // ---- 4. build_tree (per GPU) -------------------------------------------
   for (int i = 0; i < nDev; ++i) {
     CUDA_CHECK(cudaSetDevice(gpus[i].dev));
@@ -363,6 +364,8 @@ int main() {
     CUDA_CHECK(cudaSetDevice(gpus[i].dev));
     CUDA_CHECK(cudaDeviceSynchronize());
   }
+  printf("done building trees");
+  fflush(stdout);
 
   // ---- 5. summarize_kernel (per GPU) -------------------------------------
   for (int i = 0; i < nDev; ++i) {
@@ -386,6 +389,8 @@ int main() {
     CUDA_CHECK(cudaSetDevice(gpus[i].dev));
     CUDA_CHECK(cudaDeviceSynchronize());
   }
+  printf("done summarizing");
+  fflush(stdout);
 
   // ---- pretty-print: per-GPU tree after summarize ------------------------
   for (int i = 0; i < nDev; ++i) {
