@@ -61,8 +61,7 @@ __global__ void calculate_bounding_box(node* node, plane* plane) {
 __global__ void clear_kernel(tree* tree) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   int inc = gridDim.x * blockDim.x;
-  for (int j = i; j < tree->number_of_cells; j += inc) {
-    tree->is_body[i] = false;
+  for (int j = i; j < tree->number_of_cells; j += inc) { 
     tree->cells[i] = -1;
     tree->cells[i + 1] = -1;
     tree->cells[i + 2] = -1;
