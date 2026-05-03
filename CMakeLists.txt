@@ -52,3 +52,12 @@ target_include_directories(test_build_tree PRIVATE include)
 add_executable(test_summarize src/test_summarize.cu)
 target_link_libraries(test_summarize PRIVATE CUDA::cudart)
 target_include_directories(test_summarize PRIVATE include)
+
+# Two-GPU integration test for prepare_to_send_levels +
+# apply_sumamary_across_nodes (uses NCCL).
+add_executable(test_send_levels src/test_send_levels.cu)
+target_link_libraries(test_send_levels
+    PRIVATE
+        NCCL::nccl
+        CUDA::cudart)
+target_include_directories(test_send_levels PRIVATE include)

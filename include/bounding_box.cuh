@@ -303,7 +303,7 @@ all prefixes for instance for k = 5 and thread 03213 it process 0, 03, 032,
 problem is how to access appopriate idex all we have to do is for sequecne of
 length m and value j index is 4^0 + 4^1 + ... + 4^(m-1) + j
 */
-__global__ void prepare_to_send_levels(tree* tree, float* average_of_points, int* count_of_points, float* result_average, float* result_count_of_points, 
+__global__ void prepare_to_send_levels(tree* tree, float* average_of_points, int* count_of_points, float* result_average, int* result_count_of_points,
   int number_of_iter, int number_of_layers) {
     int n = tree->number_of_cells - 1; 
     int inc = blockDim.x * gridDim.x;
@@ -329,7 +329,7 @@ __global__ void prepare_to_send_levels(tree* tree, float* average_of_points, int
     }
 }
 
-__global__ void apply_sumamary_across_nodes(tree* tree, float* average_of_points, int* count_of_points, float* result_average, float* result_count_of_points, 
+__global__ void apply_sumamary_across_nodes(tree* tree, float* average_of_points, int* count_of_points, float* result_average, int* result_count_of_points,
   int number_of_iter, int number_of_layers){
     int n = tree->number_of_cells - 1; 
     int inc = blockDim.x * gridDim.x;
