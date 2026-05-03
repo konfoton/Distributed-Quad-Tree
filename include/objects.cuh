@@ -34,11 +34,11 @@ slot sentinels:
   cells[k] = -1          slot is free
   cells[k] = -2          slot is locked (insertion in progress)
 */
-
+// node can ba a cell or a point  nodes = cells + points
 typedef struct tree {
-  unsigned int number_of_cells;
-  unsigned int* number_of_free_cells;
-  int* cells;
+  unsigned int number_of_cells; // should be called number of nodes
+  unsigned int* number_of_free_cells; // number of cells to be allocated
+  int* cells; // first 4 * number_of_points are redudant 
 } tree;
 
 typedef struct root {

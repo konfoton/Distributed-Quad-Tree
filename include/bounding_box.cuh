@@ -230,7 +230,10 @@ __global__ void clear_kernel_two(float* average, int* count_of_points, int numbe
   }
 }
 
-
+/*
+2 * (number_of_points + number_of_cells) is the average
+(number_of_points + number_of_cells) is the count of points
+*/
 __global__ void summarize_kernel(float* points, float* average, int* count_of_points, tree* tree, int number_of_points, int number_of_cells){
   int i, j, k, ch, inc, cnt, bottom;
   float m, cm, px, py, pz;
