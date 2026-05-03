@@ -436,7 +436,7 @@ int main() {
     prepare_to_send_levels<<<1, number_of_iter>>>(
         g.d_tree, g.d_average, g.d_count,
         g.d_result_average, g.d_result_count,
-        number_of_iter, number_of_layers);
+        number_of_iter, number_of_layers, g.number_of_points);
     CUDA_CHECK(cudaGetLastError());
   }
   for (int i = 0; i < nDev; ++i) {
@@ -505,7 +505,7 @@ int main() {
     apply_sumamary_across_nodes<<<1, number_of_iter>>>(
         g.d_tree, g.d_average, g.d_count,
         g.d_result_average, g.d_result_count,
-        number_of_iter, number_of_layers);
+        number_of_iter, number_of_layers, g.number_of_points);
     CUDA_CHECK(cudaGetLastError());
   }
   for (int i = 0; i < nDev; ++i) {
