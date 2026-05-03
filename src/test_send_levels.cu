@@ -193,11 +193,11 @@ int main() {
   // biased toward the SW quadrant; GPU 1's cloud is biased toward the NE
   // quadrant. After the cross-node summary, the *root* centroid on each
   // GPU should be the average of all 400 points -- somewhere near (0, 0).
-  const int number_of_points = 200;
+  const int number_of_points = 1000000;
 
   std::vector<std::vector<float>> host_points(nDev);
   {
-    std::uint32_t s0 = 0xC0FFEEu;
+    std::uint32_t s0 = 0xC0FFE0u;
     host_points[0].reserve(number_of_points * 2);
     for (int i = 0; i < number_of_points; ++i) {
       // sampled in [-1, 0) x [-1, 0) -- biased SW
