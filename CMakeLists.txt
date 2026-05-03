@@ -53,6 +53,11 @@ add_executable(test_summarize src/test_summarize.cu)
 target_link_libraries(test_summarize PRIVATE CUDA::cudart)
 target_include_directories(test_summarize PRIVATE include)
 
+# Single-GPU test for summarize_kernel that pretty-prints the whole tree.
+add_executable(test_summarize_tree src/test_summarize_tree.cu)
+target_link_libraries(test_summarize_tree PRIVATE CUDA::cudart)
+target_include_directories(test_summarize_tree PRIVATE include)
+
 # Two-GPU integration test for prepare_to_send_levels +
 # apply_sumamary_across_nodes (uses NCCL).
 add_executable(test_send_levels src/test_send_levels.cu)
