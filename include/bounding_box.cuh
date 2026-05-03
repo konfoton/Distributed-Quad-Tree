@@ -257,7 +257,7 @@ __global__ void summarize_kernel(float* points, float* average, int* count_of_po
         px = 0.0f;
         py = 0.0f;
         cnt = 0;
-        int temp_count;
+        float temp_count;
         for (i = 0; i < 4; i++) {
           ch = child[i*max_threads+threadIdx.x];
           if (ch >= 0) {
@@ -277,7 +277,7 @@ __global__ void summarize_kernel(float* points, float* average, int* count_of_po
               temp_count = 1;
             }
             // add child's contribution
-            float coefficient = 1.0f / temp_count;
+            float coefficient = temp_count;
             px += chx * coefficient;
             py += chy * coefficient;
           }
