@@ -303,7 +303,57 @@ all prefixes for instance for k = 5 and thread 03213 it process 0, 03, 032,
 problem is how to access appopriate idex all we have to do is for sequecne of
 length m and value j index is 4^0 + 4^1 + ... + 4^(m-1) + j
 */
-__global__ void prepare_to_send_levels() { return; }
+__global__ void prepare_to_send_levels(tree* tree, float* average_of_points, int* count_of_points, float* result_average, float* result_count_of_points, 
+  int number_of_iter, int number_of_layers) {
+    int n = tree->number_of_cells - 1; 
+    int inc = blockDim.x * gridDim.x;
+    int i = threadIdx.x + blockDim.x * blockIdx.x;
+    int start = 4;
+    int mask = 0x3
+    int ch = n;
+    int sum = 0;
+    while(i < number_of_iter){
+     for(int j = 0; j <= number_of_layers; j++){
+        int encoding = i & mask;
+        ch = tree->cells[ch * 4 + encoding];
+        encoding >>= 2;  
+        if(i < start){
+          result_average[(sum + i) * 2] =  average_of_points[2 * ch + 0];
+          result_average[(sum + i) * 2 + 1] =  average_of_points[2 * ch + 1];
+          result_count_of_points[start + i] = count_of_points[ch];
+        }
+        sum += start; 
+        start *= 4;
+     }
+     i += inc;
+    }
+}
+
+__global__ void apply_sumamary_across_nodes(tree* tree, float* average_of_points, int* count_of_points, float* result_average, float* result_count_of_points, 
+  int number_of_iter, int number_of_layers){
+    int n = tree->number_of_cells - 1; 
+    int inc = blockDim.x * gridDim.x;
+    int i = threadIdx.x + blockDim.x * blockIdx.x;
+    int start = 4;
+    int mask = 0x3
+    int ch = n;
+    int sum = 0;
+    while(i < number_of_iter){
+     for(int j = 0; j <= number_of_layers; j++){
+        int encoding = i & mask;
+        ch = tree->cells[ch * 4 + encoding];
+        encoding >>= 2;  
+        if(i < start){
+          average_of_points[2 * ch + 0] = result_average[(sum + i) * 2] ;
+          average_of_points[2 * ch + 1] = result_average[(sum + i) * 2 + 1];
+          count_of_points[ch] = result_count_of_points[start + i];
+        }
+        sum += start; 
+        start *= 4;
+     }
+     i += inc;
+    }
+}
 
 /*
 
