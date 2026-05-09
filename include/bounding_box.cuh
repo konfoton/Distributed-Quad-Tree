@@ -388,4 +388,53 @@ else
 
 */
 
+/*
+start has size number_of_cells
+sorted has size number of points
+
+*/
+__global__ void ClearKernelthree(int* count, tree* tree){
+  int bottom = *(tree->number_of_free_cells);
+  int inc = blockDim.x * gridDim.x;
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  while(i < bottom) i += inc;
+  if(i == tree->number_of_cells - 1){
+    count[i] = 0;
+    continue
+  }
+  while(i < tree->number_of_cells){
+    count[i] = -1;
+    i += inc;
+  }
+  
+
+
+}
+__global__ void SortNodes(int* count, int* sorted, float* points, float* average, int* count_of_points, tree* tree, int number_of_points, int number_of_cells){
+  int i, j, k, ch, dec, start, bottom;
+
+  bottom = *(tree->number_of_free_cells);
+  dec = blockDim.x * gridDim.x;
+  k = number_of_cells + 1 - dec + threadIdx.x + blockIdx.x * blockDim.x;
+
+  while (k >= bottom) {
+    start = count[k];
+    if (start >= 0) {
+      for (i = 0; i < 4; i++) {
+        ch = tree->cell[k*4+i];
+        if (ch >= 0) {
+          if (ch >= numbber_of_points) {
+            count[ch] = start;  
+            start += count_of_points[ch];
+          } else {
+            sorted[start] = ch;  
+            start++;
+          }
+        }
+      }
+      k -= dec; 
+    }
+    __syncthreads(); 
+  }
+}
 __global__ void traverse_tree() { return; }
