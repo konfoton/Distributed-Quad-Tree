@@ -443,7 +443,7 @@ else
     f += (y_i - y_current) / (1 + ||y_i - y_current||^2)^2
 
 */
-__global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssqd, int* sorted, float* average_of_points, float* count_of_points, int number_of_cells, int number_of_points, float* points) {
+__global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssqd, int* sorted, float* average_of_points, float* count_of_points, int number_of_cells, int number_of_points, float* points, float* gradient) {
   int i, j, k, n, depth, base, sbase, diff, pd, nd;
   float ax, ay, az, dx, dy, dz, tmp, x_cell, y_cell, count;
   __shared__ volatile int pos[MAXDEPTH * max_threads/WARPSIZE], node[MAXDEPTH * max_threads/WARPSIZE];
@@ -471,7 +471,7 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
   }
   __syncthreads();
 
-  for (k = threadIdx.x + blockIdx.x * blockDim.x; k < numbber_of_points; k += blockDim.x * gridDim.x) {
+  for (k = threadIdx.x + blockIdx.x * blockDim.x; k < number_of_points; k += blockDim.x * gridDim.x) {
     i = sorted[k];
 
     float x_point = points[2 * i];
@@ -485,7 +485,6 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
       pos[j] = 0;
       node[j] = (number_of_points - 1) * 4;
     }
-
     do {
       // stack is not empty
       pd = pos[depth];
@@ -527,13 +526,10 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
           pd = 8; 
         }
       }
-      depth--;  // d
+      depth--;
     } while (depth >= j);
+
+    gradient[k * 2] = ax;
+    gradeint[k * 2 + 1] = ay;
   }
-
-
-
-
-
-
 }
