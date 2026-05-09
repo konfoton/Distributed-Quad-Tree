@@ -66,3 +66,9 @@ target_link_libraries(test_send_levels
         NCCL::nccl
         CUDA::cudart)
 target_include_directories(test_send_levels PRIVATE include)
+
+# Single-GPU end-to-end test for the traverse_tree pipeline (no NCCL):
+# build_tree -> summarize_kernel -> SortNodes -> traverse_tree.
+add_executable(test_traverse_tree src/test_traverse_tree.cu)
+target_link_libraries(test_traverse_tree PRIVATE CUDA::cudart)
+target_include_directories(test_traverse_tree PRIVATE include)
