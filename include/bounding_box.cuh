@@ -4,6 +4,7 @@
 
 #define max_threads 256
 #define MAXDEPTH 32
+#define WARPSIZE
 
 __global__ void calculate_bounding_box(node* node, plane* plane) {
   __shared__ float minx[max_threads], miny[max_threads], maxx[max_threads],
@@ -369,26 +370,6 @@ __global__ void apply_sumamary_across_nodes(tree* tree, float* average_of_points
 }
 
 /*
-
-d: distance to a current center of mass
-r_cell: size of a cell
-f: final_force
-
-TREE TRAVERSAL
-for each points yi we will be summing forces
-
-start_from_root_node
-if it is a cell
-    if r_cell/d < thetha then
-        we add f += N_cell * (y_i - y_cell) / (1 + ||y_i - y_cell||^2)^2
-    else
-        go deeper
-else
-    f += (y_i - y_current) / (1 + ||y_i - y_current||^2)^2
-
-*/
-
-/*
 start has size number_of_cells
 sorted has size number of points
 
@@ -410,7 +391,7 @@ __global__ void ClearKernelthree(int* count, tree* tree){
 
 
 }
-__global__ void SortNodes(int* count, int* sorted, float* points, float* average, int* count_of_points, tree* tree, int number_of_points, int number_of_cells){
+__global__ void SortNodes(int* count, int* sorted, float* points, int* count_of_points, tree* tree, int number_of_points, int number_of_cells){
   int i, j, k, ch, dec, start, bottom;
 
   bottom = *(tree->number_of_free_cells);
@@ -437,4 +418,122 @@ __global__ void SortNodes(int* count, int* sorted, float* points, float* average
     __syncthreads(); 
   }
 }
-__global__ void traverse_tree() { return; }
+
+/*
+r/distance < thetha 
+<=>
+
+r^2/ (thetha)^2 < distance^2
+
+
+d: distance to a current center of mass
+r_cell: size of a cell
+f: final_force
+
+TREE TRAVERSAL
+for each points yi we will be summing forces
+
+start_from_root_node
+if it is a cell
+    if r_cell/d < thetha then
+        we add f += N_cell * (y_i - y_cell) / (1 + ||y_i - y_cell||^2)^2
+    else
+        go deeper
+else
+    f += (y_i - y_current) / (1 + ||y_i - y_current||^2)^2
+
+*/
+__global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssqd, int* sorted, float* average_of_points, float* count_of_points, int number_of_cells, int number_of_points, float* points) {
+  int i, j, k, n, depth, base, sbase, diff, pd, nd;
+  float ax, ay, az, dx, dy, dz, tmp, x_cell, y_cell, count;
+  __shared__ volatile int pos[MAXDEPTH * max_threads/WARPSIZE], node[MAXDEPTH * max_threads/WARPSIZE];
+  __shared__ float dq[MAXDEPTH * max_threads/WARPSIZE];
+
+  if (0 == threadIdx.x) {
+    tmp = root->radius * 2;
+    dq[0] = tmp * tmp * itolsqd;
+    for (i = 1; i < MAXDEPTH; i++) {
+      dq[i] = dq[i - 1] * 0.25f;
+      dq[i - 1] += epssqd;
+    }
+    dq[i - 1] += epssqd;
+  }
+  __syncthreads();
+
+  base = threadIdx.x / WARPSIZE;
+  sbase = base * WARPSIZE;
+  j = base * MAXDEPTH;
+
+  diff = threadIdx.x - sbase;
+
+  if (diff < MAXDEPTH) {
+    dq[diff+j] = dq[diff];
+  }
+  __syncthreads();
+
+  for (k = threadIdx.x + blockIdx.x * blockDim.x; k < numbber_of_points; k += blockDim.x * gridDim.x) {
+    i = sorted[k];
+
+    float x_point = points[2 * i];
+    float y_point = points[2 * i + 1];
+
+    ax = 0.0f;
+    ay = 0.0f;
+
+    depth = j;
+    if (sbase == threadIdx.x) {
+      pos[j] = 0;
+      node[j] = (number_of_points - 1) * 4;
+    }
+
+    do {
+      // stack is not empty
+      pd = pos[depth];
+      nd = node[depth];
+      while (pd < 4) {
+
+        n = tree->cell[nd + pd];
+        pd++;
+
+        if (n >= 0) {
+
+          if(n > number_of_points){
+            x_cell = average[2 * n];
+            y_cell = average[2 * n + 1];
+            x_count = count_of_points[2 * n];
+          } else {
+            x_cell = points[2 * n];
+            y_cell = points[2 * n + 1];
+            count = 1;
+          }
+
+          dx = x_points - x_cell;
+          dy = y_points - y_cell;
+          tmp = dx*dx + (dy*dy + epssqd);  
+          if ((n < number_of_points) || __all_sync(0xffffffff, tmp >= dq[depth])) { 
+            tmp = x_count / powf((1 + temp), 2);
+            ax += dx * tmp;
+            ay += dy * tmp;
+          } else {
+            if (sbase == threadIdx.x) {
+              pos[depth] = pd;
+              node[depth] = nd;
+            }
+            depth++;
+            pd = 0;
+            nd = n * 8;
+          }
+        } else {
+          pd = 8; 
+        }
+      }
+      depth--;  // d
+    } while (depth >= j);
+  }
+
+
+
+
+
+
+}
