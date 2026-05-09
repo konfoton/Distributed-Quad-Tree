@@ -4,7 +4,7 @@
 
 #define max_threads 256
 #define MAXDEPTH 32
-#define WARPSIZE
+#define WARPSIZE 32
 
 __global__ void calculate_bounding_box(node* node, plane* plane) {
   __shared__ float minx[max_threads], miny[max_threads], maxx[max_threads],
@@ -381,7 +381,7 @@ __global__ void ClearKernelthree(int* count, tree* tree){
   while(i < bottom) i += inc;
   if(i == tree->number_of_cells - 1){
     count[i] = 0;
-    continue
+    return;
   }
   while(i < tree->number_of_cells){
     count[i] = -1;
@@ -402,9 +402,9 @@ __global__ void SortNodes(int* count, int* sorted, float* points, int* count_of_
     start = count[k];
     if (start >= 0) {
       for (i = 0; i < 4; i++) {
-        ch = tree->cell[k*4+i];
+        ch = tree->cells[k*4+i];
         if (ch >= 0) {
-          if (ch >= numbber_of_points) {
+          if (ch >= number_of_points) {
             count[ch] = start;  
             start += count_of_points[ch];
           } else {
@@ -443,10 +443,10 @@ else
     f += (y_i - y_current) / (1 + ||y_i - y_current||^2)^2
 
 */
-__global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssqd, int* sorted, float* average_of_points, float* count_of_points, int number_of_cells, int number_of_points, float* points, float* gradient) {
+__global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssqd, int* sorted, float* average, float* count_of_points, int number_of_cells, int number_of_points, float* points, float* gradient) {
   int i, j, k, n, depth, base, sbase, diff, pd, nd;
   float ax, ay, az, dx, dy, dz, tmp, x_cell, y_cell, count;
-  __shared__ volatile int pos[MAXDEPTH * max_threads/WARPSIZE], node[MAXDEPTH * max_threads/WARPSIZE];
+  __shared__ int pos[MAXDEPTH * max_threads/WARPSIZE], node[MAXDEPTH * max_threads/WARPSIZE];
   __shared__ float dq[MAXDEPTH * max_threads/WARPSIZE];
 
   if (0 == threadIdx.x) {
@@ -491,7 +491,7 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
       nd = node[depth];
       while (pd < 4) {
 
-        n = tree->cell[nd + pd];
+        n = tree->cells[nd + pd];
         pd++;
 
         if (n >= 0) {
@@ -499,18 +499,18 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
           if(n > number_of_points){
             x_cell = average[2 * n];
             y_cell = average[2 * n + 1];
-            x_count = count_of_points[2 * n];
+            count = count_of_points[2 * n];
           } else {
             x_cell = points[2 * n];
             y_cell = points[2 * n + 1];
             count = 1;
           }
 
-          dx = x_points - x_cell;
-          dy = y_points - y_cell;
+          dx = x_point - x_cell;
+          dy = y_point - y_cell;
           tmp = dx*dx + (dy*dy + epssqd);  
           if ((n < number_of_points) || __all_sync(0xffffffff, tmp >= dq[depth])) { 
-            tmp = x_count / powf((1 + temp), 2);
+            tmp = count / powf((1 + tmp), 2);
             ax += dx * tmp;
             ay += dy * tmp;
           } else {
@@ -530,6 +530,6 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
     } while (depth >= j);
 
     gradient[k * 2] = ax;
-    gradeint[k * 2 + 1] = ay;
+    gradient[k * 2 + 1] = ay;
   }
 }
