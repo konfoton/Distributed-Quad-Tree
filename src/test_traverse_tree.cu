@@ -28,7 +28,7 @@
 #include <vector>
 
 #include <cuda_runtime.h>
-
+#include <stdio.h>
 #include "bounding_box.cuh"
 #include "objects.cuh"
 
@@ -131,7 +131,7 @@ int main() {
                               number_of_points, static_cast<int>(max_cells));
   CUDA_CHECK(cudaGetLastError());
   CUDA_CHECK(cudaDeviceSynchronize());
-
+  fprintf(stderr,"summarize_kernel done");
   // ---- 4. ClearKernelthree + SortNodes -----------------------------------
   // count[k] holds the cumulative starting offset (in `sorted`) of the bodies
   // under cell k. SortNodes propagates it top-down.
@@ -144,11 +144,13 @@ int main() {
   CUDA_CHECK(cudaGetLastError());
   CUDA_CHECK(cudaDeviceSynchronize());
 
+  fprintf(stderr,"clear kernel");
   SortNodes<<<1, 256>>>(d_count, d_sorted, d_points, d_count_of_points, d_tree,
                         number_of_points, static_cast<int>(max_cells));
   CUDA_CHECK(cudaGetLastError());
   CUDA_CHECK(cudaDeviceSynchronize());
-
+  
+  fprintf(stderr, "sortNodes");
   // ---- 5. traverse_tree --------------------------------------------------
   float* d_gradient = nullptr;
   CUDA_CHECK(cudaMalloc(&d_gradient, sizeof(float) * 2 * number_of_points));
@@ -167,7 +169,8 @@ int main() {
                            d_points, d_gradient);
   CUDA_CHECK(cudaGetLastError());
   CUDA_CHECK(cudaDeviceSynchronize());
-
+   
+  fprintf(stderr, "traverse_kernel");
   // ---- 6. read back & dump ----------------------------------------------
   std::vector<int> out_sorted(number_of_points);
   std::vector<float> out_gradient(2 * number_of_points);
