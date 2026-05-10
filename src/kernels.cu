@@ -208,6 +208,7 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree,
           } while (child >= 0);
 
           tree->cells[n] = i;
+          __threadfence();
           tree->cells[locked] = patch;
           i += inc;
         }
@@ -217,7 +218,7 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree,
     // locked it may
     // revolve around and here it just
     // blocked until it is resolved
-    __syncthreads();
+    // __syncthreads();
   }
 }
 
