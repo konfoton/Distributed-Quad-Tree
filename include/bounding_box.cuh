@@ -443,7 +443,7 @@ else
     f += (y_i - y_current) / (1 + ||y_i - y_current||^2)^2
 
 */
-__global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssqd, int* sorted, float* average, float* count_of_points, int number_of_cells, int number_of_points, float* points, float* gradient) {
+__global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssqd, int* sorted, float* average, int* count_of_points, int number_of_cells, int number_of_points, float* points, float* gradient) {
   int i, j, k, n, depth, base, sbase, diff, pd, nd;
   float ax, ay, az, dx, dy, dz, tmp, x_cell, y_cell, count;
   __shared__ int pos[MAXDEPTH * max_threads/WARPSIZE], node[MAXDEPTH * max_threads/WARPSIZE];
@@ -496,7 +496,7 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
 
         if (n >= 0) {
 
-          if(n > number_of_points){
+          if(n >= number_of_points){
             x_cell = average[2 * n];
             y_cell = average[2 * n + 1];
             count = count_of_points[n];
