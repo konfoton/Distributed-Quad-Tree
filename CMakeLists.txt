@@ -85,7 +85,7 @@ if(NOT NCCL_FOUND)
     message(STATUS "Found NCCL: ${NCCL_LIBRARY}")
 endif()
 
-add_executable(main src/main.cu)
+add_executable(main src/main.cu src/kernels.cu)
 target_link_libraries(main
     PRIVATE
         NCCL::nccl
