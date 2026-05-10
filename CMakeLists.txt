@@ -123,7 +123,17 @@ apply_debug_options(test_send_levels)
 
 # Single-GPU end-to-end test for the traverse_tree pipeline (no NCCL):
 # build_tree -> summarize_kernel -> SortNodes -> traverse_tree.
-add_executable(test_traverse_tree src/test_traverse_tree.cu src/kernels.cu) 
+add_executable(test_traverse_tree src/test_traverse_tree.cu src/kernels.cu)
 target_link_libraries(test_traverse_tree PRIVATE CUDA::cudart)
 target_include_directories(test_traverse_tree PRIVATE include)
 apply_debug_options(test_traverse_tree)
+
+# Full multi-GPU pipeline (4 GPUs, NCCL). No prints; built for profiling.
+# bbox -> AllReduce -> build_tree -> summarize -> send_levels -> sort -> traverse.
+add_executable(pipeline src/pipeline.cu src/kernels.cu)
+target_link_libraries(pipeline
+    PRIVATE
+        NCCL::nccl
+        CUDA::cudart)
+target_include_directories(pipeline PRIVATE include)
+apply_debug_options(pipeline)
