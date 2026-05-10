@@ -323,8 +323,8 @@ __global__ void prepare_to_send_levels(tree* tree, float* average_of_points, int
           break;
         }
         if(i < start){
-          result_average[(sum + i) * 2] =  average_of_points[2 * ch + 0] * count_of_points;
-          result_average[(sum + i) * 2 + 1] =  average_of_points[2 * ch + 1] * count_of_points;
+          result_average[(sum + i) * 2] =  average_of_points[2 * ch + 0] * count_of_points[ch];
+          result_average[(sum + i) * 2 + 1] =  average_of_points[2 * ch + 1] * count_of_points[ch];
           result_count_of_points[sum + i] = count_of_points[ch];
         }
         encoding = copy & mask;
