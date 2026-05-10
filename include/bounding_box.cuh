@@ -169,7 +169,7 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree,
             if (patch == -1) {
               patch = cell;
             } else {
-              tree->cells[old_cell + step] = cell;
+              tree->cells[old_cell * 4 + step] = cell;
             }
 
             // we are of of pool
@@ -180,7 +180,7 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree,
 
             step = 0;
             if (points[second_point * 2] > x) step |= 1;
-            if (points[second_point * 2 * 1] > y) step |= 2;
+            if (points[second_point * 2 + 1] > y) step |= 2;
             tree->cells[cell * 4 + step] = second_point;
 
             r *= 0.5f;
@@ -396,7 +396,7 @@ __global__ void SortNodes(int* count, int* sorted, float* points, int* count_of_
 
   bottom = *(tree->number_of_free_cells);
   dec = blockDim.x * gridDim.x;
-  k = number_of_cells + 1 - dec + threadIdx.x + blockIdx.x * blockDim.x;
+  k = number_of_cells + 1 - dec + threadIdx.x + blockIdx.x * blockDim.x - 1;
 
   while (k >= bottom) {
     start = count[k];
