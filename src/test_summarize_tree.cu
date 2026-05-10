@@ -18,7 +18,7 @@
 
 #include <cuda_runtime.h>
 
-#include "bounding_box.cuh"
+#include "kernels.cuh"
 #include "objects.cuh"
 
 #define CUDA_CHECK(cmd)                                                   \

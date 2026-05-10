@@ -1,8 +1,7 @@
-#pragma once
 #include <memory>
 #include "objects.cuh"
 #include "kernels.cuh"
-
+#include <stdio.h>
 #define max_threads 256
 #define MAXDEPTH 32
 #define WARPSIZE 32

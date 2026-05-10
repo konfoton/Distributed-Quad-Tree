@@ -29,7 +29,7 @@
 
 #include <cuda_runtime.h>
 #include <stdio.h>
-#include "bounding_box.cuh"
+#include "kernels.cuh"
 #include "objects.cuh"
 
 #define CUDA_CHECK(cmd)                                                   \
@@ -164,7 +164,7 @@ int main() {
   // a per-cell weight). We pass the int* buffer reinterpreted; matches the
   // current kernel signature so the test compiles.
   traverse_tree<<<1, 32>>>(d_tree, d_root, itolsqd, epssqd, d_sorted, d_average,
-                           reinterpret_cast<float*>(d_count_of_points),
+                           d_count_of_points,
                            static_cast<int>(max_cells), number_of_points,
                            d_points, d_gradient);
   CUDA_CHECK(cudaGetLastError());

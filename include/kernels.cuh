@@ -1,4 +1,7 @@
 #pragma once
+#include <cuda_runtime.h>
+#include "objects.cuh"
+
 
 __global__ void calculate_bounding_box(node* node, plane* plane);
 __global__ void clear_kernel(tree* tree);
