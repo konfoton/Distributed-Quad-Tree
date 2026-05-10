@@ -483,7 +483,7 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
     depth = j;
     if (sbase == threadIdx.x) {
       pos[j] = 0;
-      node[j] = (number_of_points - 1) * 4;
+      node[j] = (number_of_cells - 1) * 4;
     }
     do {
       // stack is not empty
@@ -499,7 +499,7 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
           if(n > number_of_points){
             x_cell = average[2 * n];
             y_cell = average[2 * n + 1];
-            count = count_of_points[2 * n];
+            count = count_of_points[n];
           } else {
             x_cell = points[2 * n];
             y_cell = points[2 * n + 1];
@@ -520,10 +520,10 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
             }
             depth++;
             pd = 0;
-            nd = n * 8;
+            nd = n * 4;
           }
         } else {
-          pd = 8; 
+          pd = 4; 
         }
       }
       depth--;
