@@ -56,17 +56,17 @@ namespace {
 
 // ---- knobs ---------------------------------------------------------------
 constexpr int   kNumDev          = 4;
-constexpr int   kPointsPerGpu    = 2'000'000;
+constexpr int   kPointsPerGpu    = 1'000'000;
 constexpr int   kCellsHeuristic  = 8;        // max_cells = X * N
 constexpr int   kIterations      = 1;        // bench loop count
 
 // share root + 2 levels = 1 + 4 + 16 = 21 cells across nodes
-constexpr int   kSendLayers      = 8;
+constexpr int   kSendLayers      = 2;
 constexpr int   kSendIter        = 1 << (2 * kSendLayers);  // 16
 
 // kernel launch shapes
 constexpr int   kThreads         = 256;          // most kernels
-constexpr int   kBuildBlocks     = 256;          // contention on atomicCAS
+constexpr int   kBuildBlocks     = 20;          // contention on atomicCAS
 constexpr int   kBuildThreads    = 256;
 constexpr int   kSummarizeBlocks = 64;
 constexpr int   kSummarizeThreads= 256;          // must be <= max_threads (=256)
@@ -166,6 +166,7 @@ int main() {
   std::vector<GpuState> gpus(kNumDev);
   std::vector<ncclComm_t> comms(kNumDev);
   NCCL_CHECK(ncclCommInitAll(comms.data(), kNumDev, devs.data()));
+  fprintf(stderr, "topology found");
 
   builder creator;
 
@@ -225,7 +226,7 @@ int main() {
     CUDA_CHECK(cudaMalloc(&g.d_result_average, sizeof(float) * 2 * M));
     CUDA_CHECK(cudaMalloc(&g.d_result_count,   sizeof(int)   * M));
   }
-
+  fprintf(stderr, "allocted everything");
   // -------------------------------------------------------------------------
   // Iteration loop. Wrap stages 1..7 to repeat-time benchmark a steady-state
   // step once buffers are warm. Increase kIterations to deepen the trace.
@@ -249,6 +250,7 @@ int main() {
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
 
+    fprintf(stderr, "boudingbox");
     // ---- 2. ncclAllReduce on bboxes --------------------------------------
     std::vector<plane> planes_h(kNumDev);
     for (int i = 0; i < kNumDev; ++i) {
@@ -310,7 +312,7 @@ int main() {
       CUDA_CHECK(cudaSetDevice(gpus[i].dev));
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
-
+    fprintf(stderr, "build tree kernel");
     // ---- 4. clear_kernel_two + summarize_kernel --------------------------
     for (int i = 0; i < kNumDev; ++i) {
       GpuState& g = gpus[i];
@@ -327,7 +329,7 @@ int main() {
       CUDA_CHECK(cudaSetDevice(gpus[i].dev));
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
-
+    fprintf(stderr, "summarize kernel");
     // ---- 5. prepare_to_send_levels + AllReduce + apply_summary -----------
     for (int i = 0; i < kNumDev; ++i) {
       GpuState& g = gpus[i];
@@ -346,6 +348,8 @@ int main() {
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
 
+    fprintf(stderr, "send level kernel");
+
     NCCL_CHECK(ncclGroupStart());
     for (int i = 0; i < kNumDev; ++i) {
       GpuState& g = gpus[i];
@@ -363,6 +367,7 @@ int main() {
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
 
+    fprintf(stderr, "allreduced kerenl ");
     for (int i = 0; i < kNumDev; ++i) {
       GpuState& g = gpus[i];
       CUDA_CHECK(cudaSetDevice(g.dev));
@@ -375,7 +380,7 @@ int main() {
       CUDA_CHECK(cudaSetDevice(gpus[i].dev));
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
-
+     fprintf(stderr, "aapply summary kernel");
     // ---- 6. ClearKernelthree + SortNodes ---------------------------------
     for (int i = 0; i < kNumDev; ++i) {
       GpuState& g = gpus[i];
@@ -390,7 +395,8 @@ int main() {
       CUDA_CHECK(cudaSetDevice(gpus[i].dev));
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
-
+    
+     fprintf(stderr, "sortnodes");
     // ---- 7. traverse_tree (per GPU) --------------------------------------
     const float itolsqd = 1.0f / (kTheta * kTheta);
     const int   trav_blocks =
