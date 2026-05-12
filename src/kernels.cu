@@ -471,7 +471,8 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
   __syncthreads();
 
   for (k = threadIdx.x + blockIdx.x * blockDim.x; k < number_of_points; k += blockDim.x * gridDim.x) {
-    i = sorted[k];
+    // i = sorted[k];
+    i = k;
 
     float x_point = points[2 * i];
     float y_point = points[2 * i + 1];
