@@ -66,7 +66,7 @@ constexpr int   kSendIter        = 1 << (2 * kSendLayers);  // 16
 
 // kernel launch shapes
 constexpr int   kThreads         = 256;          // most kernels
-constexpr int   kBuildBlocks     = 20;          // contention on atomicCAS
+constexpr int   kBuildBlocks     = 64;          // contention on atomicCAS
 constexpr int   kBuildThreads    = 256;
 constexpr int   kSummarizeBlocks = 64;
 constexpr int   kSummarizeThreads= 256;          // must be <= max_threads (=256)
@@ -301,7 +301,7 @@ int main() {
       CUDA_CHECK(cudaMemcpyAsync(gpus[i].d_root, &h_root, sizeof(root),
                                  cudaMemcpyHostToDevice, gpus[i].stream));
     }
-
+    fprintf(stderr, "root acheived");
     for (int i = 0; i < kNumDev; ++i) {
       CUDA_CHECK(cudaSetDevice(gpus[i].dev));
       build_tree<<<kBuildBlocks, kBuildThreads, 0, gpus[i].stream>>>(
