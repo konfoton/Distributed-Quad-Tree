@@ -376,20 +376,18 @@ sorted has size number of points
 
 */
 __global__ void ClearKernelthree(int* count, tree* tree){
-  int bottom = *(tree->number_of_free_cells);
-  int inc = blockDim.x * gridDim.x;
-  int i = threadIdx.x + blockIdx.x * blockDim.x;
-  while(i < bottom) i += inc;
-  if(i == tree->number_of_cells - 1){
-    count[i] = 0;
-    return;
-  }
-  while(i < tree->number_of_cells){
-    count[i] = -1;
-    i += inc;
-  }
-  
-
+    const int bottom          = *(tree->number_of_free_cells);                  
+    const int number_of_cells = (int)tree->number_of_cells;
+    const int root_idx        = number_of_cells - 1;                            
+    const int inc             = blockDim.x * gridDim.x;                       
+    const int tid             = threadIdx.x + blockIdx.x * blockDim.x;          
+    
+    for (int i = bottom + tid; i < root_idx; i += inc) {                        
+      count[i] = -1;                                                            
+    }
+    if (tid == 0) {
+      count[root_idx] = 0;
+    }    
 
 }
 __global__ void SortNodes(int* count, int* sorted, float* points, int* count_of_points, tree* tree, int number_of_points, int number_of_cells){
