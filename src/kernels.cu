@@ -521,8 +521,6 @@ __global__ void traverse_tree(tree* tree, root* root, float itolsqd, float epssq
             pd = 0;
             nd = n * 4;
           }
-        } else {
-          pd = 4; 
         }
       }
       depth--;
