@@ -58,7 +58,7 @@ namespace {
 constexpr int   kNumDev          = 4;
 constexpr int   kPointsPerGpu    = 1'000'000;
 constexpr int   kCellsHeuristic  = 8;        // max_cells = X * N
-constexpr int   kIterations      = 1;        // bench loop count
+constexpr int   kIterations      = 10;        // bench loop count
 
 // share root + 2 levels = 1 + 4 + 16 = 21 cells across nodes
 constexpr int   kSendLayers      = 2;
@@ -166,7 +166,6 @@ int main() {
   std::vector<GpuState> gpus(kNumDev);
   std::vector<ncclComm_t> comms(kNumDev);
   NCCL_CHECK(ncclCommInitAll(comms.data(), kNumDev, devs.data()));
-  fprintf(stderr, "topology found");
 
   builder creator;
 
@@ -226,7 +225,6 @@ int main() {
     CUDA_CHECK(cudaMalloc(&g.d_result_average, sizeof(float) * 2 * M));
     CUDA_CHECK(cudaMalloc(&g.d_result_count,   sizeof(int)   * M));
   }
-  fprintf(stderr, "allocted everything");
   // -------------------------------------------------------------------------
   // Iteration loop. Wrap stages 1..7 to repeat-time benchmark a steady-state
   // step once buffers are warm. Increase kIterations to deepen the trace.
@@ -250,7 +248,6 @@ int main() {
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
 
-    fprintf(stderr, "boudingbox");
     // ---- 2. ncclAllReduce on bboxes --------------------------------------
     std::vector<plane> planes_h(kNumDev);
     for (int i = 0; i < kNumDev; ++i) {
@@ -301,7 +298,6 @@ int main() {
       CUDA_CHECK(cudaMemcpyAsync(gpus[i].d_root, &h_root, sizeof(root),
                                  cudaMemcpyHostToDevice, gpus[i].stream));
     }
-    fprintf(stderr, "root acheived");
     for (int i = 0; i < kNumDev; ++i) {
       CUDA_CHECK(cudaSetDevice(gpus[i].dev));
       build_tree<<<kBuildBlocks, kBuildThreads, 0, gpus[i].stream>>>(
@@ -312,7 +308,6 @@ int main() {
       CUDA_CHECK(cudaSetDevice(gpus[i].dev));
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
-    fprintf(stderr, "build tree kernel");
     // ---- 4. clear_kernel_two + summarize_kernel --------------------------
     for (int i = 0; i < kNumDev; ++i) {
       GpuState& g = gpus[i];
@@ -329,7 +324,6 @@ int main() {
       CUDA_CHECK(cudaSetDevice(gpus[i].dev));
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
-    fprintf(stderr, "summarize kernel");
     // ---- 5. prepare_to_send_levels + AllReduce + apply_summary -----------
     for (int i = 0; i < kNumDev; ++i) {
       GpuState& g = gpus[i];
@@ -348,7 +342,6 @@ int main() {
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
 
-    fprintf(stderr, "send level kernel");
 
     NCCL_CHECK(ncclGroupStart());
     for (int i = 0; i < kNumDev; ++i) {
@@ -367,7 +360,6 @@ int main() {
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
 
-    fprintf(stderr, "allreduced kerenl ");
     for (int i = 0; i < kNumDev; ++i) {
       GpuState& g = gpus[i];
       CUDA_CHECK(cudaSetDevice(g.dev));
@@ -380,7 +372,6 @@ int main() {
       CUDA_CHECK(cudaSetDevice(gpus[i].dev));
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
-     fprintf(stderr, "aapply summary kernel");
     // ---- 6. ClearKernelthree + SortNodes ---------------------------------
     for (int i = 0; i < kNumDev; ++i) {
       GpuState& g = gpus[i];
@@ -396,12 +387,11 @@ int main() {
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
     
-     fprintf(stderr, "sortnodes");
     // ---- 7. traverse_tree (per GPU) --------------------------------------
     const float itolsqd = 1.0f / (kTheta * kTheta);
     const int   trav_blocks =
         (kPointsPerGpu + kTraverseThreads - 1) / kTraverseThreads;
-    for (int i = 0; i < kNumDev; ++i) {
+    for (int i = kNumDev - 1; i >= 0; --i) {
       GpuState& g = gpus[i];
       CUDA_CHECK(cudaSetDevice(g.dev));
       traverse_tree<<<trav_blocks, kTraverseThreads, 0, g.stream>>>(
@@ -410,7 +400,7 @@ int main() {
           static_cast<int>(g.max_cells), g.number_of_points,
           g.d_points, g.d_gradient);
     }
-    for (int i = 0; i < kNumDev; ++i) {
+    for (int i = kNumDev - 1; i >= 0; --i) {
       CUDA_CHECK(cudaSetDevice(gpus[i].dev));
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
