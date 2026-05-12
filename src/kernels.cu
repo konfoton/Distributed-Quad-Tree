@@ -250,7 +250,7 @@ __global__ void summarize_kernel(float* points, float* average, int* count_of_po
       for (i = 0; i < 4; i++) {
         ch = tree->cells[k*4+i];
         child[i*max_threads + threadIdx.x] = ch;  // cache children
-        if ((ch >= number_of_points) && ((count_of_points[ch]) < 0)) {
+        if ((ch >= number_of_points) && (( __ldcg(&(count_of_points[ch]))) < 0)) {
           break;
         }
       }
