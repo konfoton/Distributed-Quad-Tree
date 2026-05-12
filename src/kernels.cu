@@ -137,7 +137,7 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree,
 
       x += dx;
       y += dy;
-      child = tree->cells[n * 4 + step];
+      child = __ldcg(&tree->cells[n * 4 + step]);
     }
 
     if (child != -2) {
