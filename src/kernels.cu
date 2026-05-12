@@ -209,7 +209,7 @@ __global__ void build_tree(float* points, int number_of_points, tree* tree,
 
           tree->cells[n] = i;
           __threadfence();
-          tree->cells[locked] = patch;
+          tree->cells[locked] = patch; // possible making it visible
           i += inc;
         }
       }
