@@ -308,22 +308,6 @@ int main() {
       CUDA_CHECK(cudaSetDevice(gpus[i].dev));
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
-
-    // ---- DEBUG: cells consumed per GPU after build_tree ------------------
-    // If GPU 0 reports a much larger value than 1..3, its local tree is
-    // structurally bigger (probably an unlucky LCG cluster) and that's why
-    // traverse_tree is slow there. Compare across iterations to see if
-    // the imbalance persists.
-    for (int i = 0; i < kNumDev; ++i) {
-      CUDA_CHECK(cudaSetDevice(gpus[i].dev));
-      unsigned int h_free = 0;
-      CUDA_CHECK(cudaMemcpy(&h_free, gpus[i].d_free, sizeof(unsigned int),
-                            cudaMemcpyDeviceToHost));
-      const unsigned int used = gpus[i].max_cells - 1u - h_free;
-      std::fprintf(stderr, "[iter %d] GPU %d cells_used=%u (max=%u)\n",
-                   iter, gpus[i].dev, used, gpus[i].max_cells);
-    }
-
     // ---- 4. clear_kernel_two + summarize_kernel --------------------------
     for (int i = 0; i < kNumDev; ++i) {
       GpuState& g = gpus[i];
