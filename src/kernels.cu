@@ -400,13 +400,13 @@ __global__ void SortNodes(int* count, int* sorted, float* points, int* count_of_
   k = number_of_cells + 1 - dec + threadIdx.x + blockIdx.x * blockDim.x - 1;
 
   while (k >= bottom) {
-    start = count[k];
+    start = __ldcg(&(count[k]));
     if (start >= 0) {
       for (i = 0; i < 4; i++) {
         ch = tree->cells[k*4+i];
         if (ch >= 0) {
           if (ch >= number_of_points) {
-            count[ch] = start;  
+            __stcg(&(count[ch]), start);
             start += count_of_points[ch];
           } else {
             sorted[start] = ch;  
@@ -416,7 +416,7 @@ __global__ void SortNodes(int* count, int* sorted, float* points, int* count_of_
       }
       k -= dec; 
     }
-    __syncthreads(); 
+    //__syncthreads(); 
   }
 }
 
