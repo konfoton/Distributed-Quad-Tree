@@ -360,18 +360,6 @@ int main() {
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
 
-    for (int i = 0; i < kNumDev; ++i) {
-      GpuState& g = gpus[i];
-      CUDA_CHECK(cudaSetDevice(g.dev));
-      apply_sumamary_across_nodes<<<1, kSendIter, 0, g.stream>>>(
-          g.d_tree, g.d_average, g.d_count_of_points,
-          g.d_result_average, g.d_result_count,
-          kSendIter, kSendLayers, g.number_of_points);
-    }
-    for (int i = 0; i < kNumDev; ++i) {
-      CUDA_CHECK(cudaSetDevice(gpus[i].dev));
-      CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
-    }
     // ---- 6. ClearKernelthree + SortNodes ---------------------------------
     for (int i = 0; i < kNumDev; ++i) {
       GpuState& g = gpus[i];
@@ -387,6 +375,19 @@ int main() {
       CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
     }
     
+    for (int i = 0; i < kNumDev; ++i) {
+      GpuState& g = gpus[i];
+      CUDA_CHECK(cudaSetDevice(g.dev));
+      apply_sumamary_across_nodes<<<1, kSendIter, 0, g.stream>>>(
+          g.d_tree, g.d_average, g.d_count_of_points,
+          g.d_result_average, g.d_result_count,
+          kSendIter, kSendLayers, g.number_of_points);
+    }
+    for (int i = 0; i < kNumDev; ++i) {
+      CUDA_CHECK(cudaSetDevice(gpus[i].dev));
+      CUDA_CHECK(cudaStreamSynchronize(gpus[i].stream));
+    }
+
     // ---- 7. traverse_tree (per GPU) --------------------------------------
     const float itolsqd = 1.0f / (kTheta * kTheta);
     const int   trav_blocks =
